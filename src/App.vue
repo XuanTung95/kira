@@ -417,7 +417,7 @@ import { useDebounce } from '@/composables/useDebounce';
 import { useProxySettings } from '@/composables/useProxySettings';
 import { useToastStore } from '@/stores/toastStore';
 
-import { Innertube, UniversalCache, YTNodes } from 'youtubei.js/web';
+import { Innertube, Platform, UniversalCache, YTNodes, Types } from 'youtubei.js/web';
 import { base64ToU8 } from 'googlevideo/utils';
 import { botguardService } from '@/services/botguard';
 
@@ -456,6 +456,22 @@ const searchResults = ref<{
 const isLoading = ref(false);
 const highlightedIndex = ref(-1);
 const showSettingsDialog = ref(false);
+
+Platform.shim.eval = async (data: Types.BuildScriptResult, env: Record<string, Types.VMPrimative>) => {
+  const properties = [];
+
+  if (env.n) {
+    properties.push(`n: exportedVars.nFunction("${env.n}")`);
+  }
+
+  if (env.sig) {
+    properties.push(`sig: exportedVars.sigFunction("${env.sig}")`);
+  }
+
+  const code = `${data.output}\nreturn { ${properties.join(', ')} }`;
+
+  return new Function(code)();
+};
 
 async function initInnertube() {
   const firstTime = await isFirstTime();

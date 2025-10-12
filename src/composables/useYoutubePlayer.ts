@@ -139,22 +139,22 @@ export function useYoutubePlayer() {
   //#endregion
 
   //#region --- WebPO Minter ---
-  async function mintSessionPoToken() {
+  async function mintContentWebPO() {
     if (!sessionPoTokenContentBinding || sessionPoTokenCreationLock) return;
 
     sessionPoTokenCreationLock = true;
     try {
-      coldStartToken = botguardService.mintColdStartToken(sessionPoTokenContentBinding);
-      console.info('[Player]', `Cold start token created (Content binding: ${decodeURIComponent(sessionPoTokenContentBinding)})`);
+      coldStartToken = botguardService.mintColdStartToken(currentVideoId);
+      console.info('[Player]', `Cold start token created (Content binding: ${decodeURIComponent(currentVideoId)})`);
 
       if (!botguardService.isInitialized()) await botguardService.reinit();
 
       if (botguardService.integrityTokenBasedMinter) {
-        sessionPoToken = await botguardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(sessionPoTokenContentBinding));
-        console.info('[Player]', `Session PO token created (Content binding: ${decodeURIComponent(sessionPoTokenContentBinding)})`);
+        sessionPoToken = await botguardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(currentVideoId));
+        console.info('[Player]', `WebPO token created (Content binding: ${decodeURIComponent(currentVideoId)})`);
       }
     } catch (err) {
-      console.error('[Player]', 'Error minting session PO token', err);
+      console.error('[Player]', 'Error minting WebPO token', err);
     } finally {
       sessionPoTokenCreationLock = false;
     }
@@ -319,9 +319,9 @@ export function useYoutubePlayer() {
         // For VODs, we can mint the token in the background to avoid delaying playback, as it's not immediately required.
         // While BotGuard is pretty darn fast, it still makes a difference in user experience (from my own testing).
         if (isLive) {
-          await mintSessionPoToken();
+          await mintContentWebPO();
         } else {
-          mintSessionPoToken().then();
+          mintContentWebPO().then();
         }
       }
 
@@ -337,7 +337,7 @@ export function useYoutubePlayer() {
       }
 
       const videoInfo = new YT.VideoInfo([ apiResponse ], innertube.actions, clientPlaybackNonce);
-      sabrAdapter.setStreamingURL(innertube.session.player!.decipher(videoInfo.streaming_data?.server_abr_streaming_url));
+      sabrAdapter.setStreamingURL(await innertube.session.player!.decipher(videoInfo.streaming_data?.server_abr_streaming_url));
       sabrAdapter.setUstreamerConfig(videoInfo.player_config?.media_common_config.media_ustreamer_request_config?.video_playback_ustreamer_config);
     });
 
@@ -411,7 +411,7 @@ export function useYoutubePlayer() {
           pyv: true
         },
         contentPlaybackContext: {
-          signatureTimestamp: innertube.session.player?.sts
+          signatureTimestamp: innertube.session.player?.signature_timestamp
         }
       }
     };
@@ -532,7 +532,7 @@ export function useYoutubePlayer() {
     }
 
     if (videoInfo.streaming_data && !isPostLiveDVR && !isLive) {
-      sabrAdapter.setStreamingURL(innertube.session.player!.decipher(videoInfo.streaming_data?.server_abr_streaming_url));
+      sabrAdapter.setStreamingURL(await innertube.session.player!.decipher(videoInfo.streaming_data?.server_abr_streaming_url));
       sabrAdapter.setServerAbrFormats(videoInfo.streaming_data.adaptive_formats.map(buildSabrFormat));
       sabrAdapter.setUstreamerConfig(videoInfo.player_config?.media_common_config.media_ustreamer_request_config?.video_playback_ustreamer_config);
     }

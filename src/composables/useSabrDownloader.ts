@@ -48,7 +48,7 @@ export function useSabrDownloader() {
           pyv: true
         },
         contentPlaybackContext: {
-          signatureTimestamp: innertube.session.player?.sts
+          signatureTimestamp: innertube.session.player?.signature_timestamp
         }
       }
     };
@@ -61,9 +61,9 @@ export function useSabrDownloader() {
     return new YT.VideoInfo([ rawPlayerResponse ], innertube.actions, '');
   }
 
-  async function initializeSabrStream(innertube: Innertube, playerResponse: YT.VideoInfo) {
+  async function initializeSabrStream(innertube: Innertube, playerResponse: YT.VideoInfo, videoId: string) {
     const contentBinding = innertube.session.context.client.visitorData;
-    const serverAbrStreamingUrl = innertube.session.player?.decipher(playerResponse.streaming_data?.server_abr_streaming_url);
+    const serverAbrStreamingUrl = await innertube.session.player?.decipher(playerResponse.streaming_data?.server_abr_streaming_url);
     const videoPlaybackUstreamerConfig = playerResponse.player_config?.media_common_config.media_ustreamer_request_config?.video_playback_ustreamer_config;
     const formats = playerResponse.streaming_data?.adaptive_formats.map(buildSabrFormat) || [];
 
@@ -81,7 +81,7 @@ export function useSabrDownloader() {
       serverAbrStreamingUrl,
       videoPlaybackUstreamerConfig,
       fetch: (input, init) => checkExtension() ? fetch(input, init) : fetchFunction(input, init),
-      poToken: await botguardService.integrityTokenBasedMinter?.mintAsWebsafeString(contentBinding),
+      poToken: await botguardService.integrityTokenBasedMinter?.mintAsWebsafeString(videoId),
       clientInfo: {
         clientName: parseInt(Constants.CLIENT_NAME_IDS[innertube.session.context.client.clientName as keyof typeof Constants.CLIENT_NAME_IDS]),
         clientVersion: innertube.session.context.client.clientVersion
@@ -101,7 +101,7 @@ export function useSabrDownloader() {
         return;
       }
 
-      await initializeSabrStream(innertube, playerResponse);
+      await initializeSabrStream(innertube, playerResponse, videoId);
       isChoosingFormats.value = true;
     } catch (error: any) {
       console.error('[useSabrDownloader] Error preparing download:', error);

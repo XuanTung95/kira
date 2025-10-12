@@ -56,7 +56,7 @@ const playerComponents = shallowRef<PlayerComponents>({
 
 const playerState = ref<PlayerState>('loading');
 
-let sessionPoToken: string | undefined;
+let playbackWebPoToken: string | undefined;
 let coldStartToken: string | undefined;
 
 export function useYoutubePlayer() {
@@ -67,8 +67,8 @@ export function useYoutubePlayer() {
   const { settings } = useProxySettings();
 
   let drmParams: string | undefined;
-  let sessionPoTokenContentBinding: string | undefined;
-  let sessionPoTokenCreationLock = false;
+  let playbackWebPoTokenContentBinding: string | undefined;
+  let playbackWebPoTokenCreationLock = false;
   let savePositionInterval: number | null = null;
   let playbackTrackerInterval: number | null = null;
   let playerStartTimeWatcher: WatchHandle | null = null;
@@ -140,23 +140,23 @@ export function useYoutubePlayer() {
 
   //#region --- WebPO Minter ---
   async function mintContentWebPO() {
-    if (!sessionPoTokenContentBinding || sessionPoTokenCreationLock) return;
+    if (!playbackWebPoTokenContentBinding || playbackWebPoTokenCreationLock) return;
 
-    sessionPoTokenCreationLock = true;
+    playbackWebPoTokenCreationLock = true;
     try {
-      coldStartToken = botguardService.mintColdStartToken(currentVideoId);
-      console.info('[Player]', `Cold start token created (Content binding: ${decodeURIComponent(currentVideoId)})`);
+      coldStartToken = botguardService.mintColdStartToken(playbackWebPoTokenContentBinding);
+      console.info('[Player]', `Cold start token created (Content binding: ${decodeURIComponent(playbackWebPoTokenContentBinding)})`);
 
       if (!botguardService.isInitialized()) await botguardService.reinit();
 
       if (botguardService.integrityTokenBasedMinter) {
-        sessionPoToken = await botguardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(currentVideoId));
-        console.info('[Player]', `WebPO token created (Content binding: ${decodeURIComponent(currentVideoId)})`);
+        playbackWebPoToken = await botguardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(playbackWebPoTokenContentBinding));
+        console.info('[Player]', `WebPO token created (Content binding: ${decodeURIComponent(playbackWebPoTokenContentBinding)})`);
       }
     } catch (err) {
       console.error('[Player]', 'Error minting WebPO token', err);
     } finally {
-      sessionPoTokenCreationLock = false;
+      playbackWebPoTokenCreationLock = false;
     }
   }
   //#endregion
@@ -314,7 +314,7 @@ export function useYoutubePlayer() {
     });
 
     sabrAdapter.onMintPoToken(async () => {
-      if (!sessionPoToken) {
+      if (!playbackWebPoToken) {
         // For live streams, we must block and wait for the PO token as it's sometimes required for playback to start.
         // For VODs, we can mint the token in the background to avoid delaying playback, as it's not immediately required.
         // While BotGuard is pretty darn fast, it still makes a difference in user experience (from my own testing).
@@ -325,7 +325,7 @@ export function useYoutubePlayer() {
         }
       }
 
-      return sessionPoToken || coldStartToken || '';
+      return playbackWebPoToken || coldStartToken || '';
     });
 
     sabrAdapter.onReloadPlayerResponse(async (reloadPlaybackContext) => {
@@ -597,6 +597,7 @@ export function useYoutubePlayer() {
 
     currentVideoId = videoId;
     playerState.value = 'loading';
+    playbackWebPoToken = undefined;
 
     try {
       if (!playerComponents.value.player) {
@@ -616,7 +617,7 @@ export function useYoutubePlayer() {
       const innertube = await getInnertube();
       if (!innertube) return;
 
-      sessionPoTokenContentBinding = innertube.session.context.client.visitorData || '';
+      playbackWebPoTokenContentBinding = videoId;
 
       await cleanupPreviousVideo();
       await initializeSabrAdapter();

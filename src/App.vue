@@ -335,60 +335,6 @@ body {
 
 <template>
   <div class="app">
-    <div class="search-container">
-      <router-link to="/" class="home-button" aria-label="Go to homepage">
-        <HomeIcon/>
-      </router-link>
-      <div class="search-input-wrapper">
-        <div class="search-icon">
-          <SearchIcon/>
-        </div>
-        <input
-          v-model="searchQuery"
-          placeholder="Search videos..."
-          @input="handleSearch"
-          @keydown.down.prevent="navigateResults('down')"
-          @keydown.up.prevent="navigateResults('up')"
-          @keydown.enter="selectHighlightedVideo"
-          class="search-input"
-        />
-        <div v-if="searchQuery && !isLoading" class="clear-search" @click="clearSearch">×</div>
-        <div v-if="isLoading" class="loader"></div>
-      </div>
-      <button class="settings-button" @click="showSettingsDialog = true" aria-label="Open settings">
-        <SettingsIcon/>
-      </button>
-      <div v-if="searchResults.length" class="search-results">
-        <div
-          v-for="(result, index) in searchResults"
-          :key="result.id"
-          class="search-result-item"
-          :class="{ 'highlighted': index === highlightedIndex }"
-          @click="selectVideo(result.id)"
-          @mouseenter="highlightedIndex = index"
-        >
-          <div class="thumbnail-container">
-            <img
-              :src="result.thumbnail"
-              class="thumbnail"
-              :alt="result.title"
-              loading="lazy"
-              @error="handleImageError($event.target as any)"
-            />
-            <div class="duration">{{ result.duration || '??:??' }}</div>
-          </div>
-          <div class="video-info">
-            <div class="title">{{ result.title }}</div>
-            <div class="channel">{{ result.channel }}</div>
-            <div v-if="result.views" class="meta">{{ result.views }}</div>
-          </div>
-        </div>
-      </div>
-      <div v-else-if="searchQuery && !isLoading" class="empty-results">
-        <SadFaceIcon/>
-        <p>No videos found. Try a different search term.</p>
-      </div>
-    </div>
     <div class="main-content">
       <router-view/>
     </div>

@@ -67,7 +67,7 @@ const { videoId } = defineProps<{ videoId: string; }>();
 
 const playerHostElement = ref<HTMLElement | null>(null);
 
-const { loadVideo } = useYoutubePlayer();
+const {player, ui, playerState, loadVideo} = useYoutubePlayer();
 
 async function load(id: string) {
   if (!playerHostElement.value) return;
@@ -75,5 +75,17 @@ async function load(id: string) {
 }
 
 watch(() => videoId, (newId) => load(newId));
-onMounted(() => load(videoId));
+onMounted(() => {
+  load(videoId);
+  (window as any).myPlayerControl = {
+    player: player,
+    load: load,
+  };
+  (window as any).onPlayerStateChanged = (state: any) => {
+    console.log("state", state);
+    if (state.status == 'ended') {
+      load("skth3GdGbvU")
+    }
+  };
+});
 </script>

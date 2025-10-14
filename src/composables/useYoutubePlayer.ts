@@ -79,6 +79,13 @@ export function useYoutubePlayer() {
   const clientPlaybackNonce = Utils.generateRandomString(12);
   const sessionId = Array.from(Array(16), () => Math.floor(Math.random() * 36).toString(36)).join('');
 
+  function onPlayerStateChanged(state: any) {
+    console.log(`[SHAKA] State change: `, state);
+    if (window && (window as any).onPlayerStateChanged != null) {
+      (window as any).onPlayerStateChanged(state);
+    }
+  }
+
   //#region --- Playback Position and Volume Management ---
   function getPlaybackPositions(): Record<string, number> {
     try {
@@ -203,6 +210,9 @@ export function useYoutubePlayer() {
 
     const videoEl = document.createElement('video');
     videoEl.autoplay = true;
+    videoEl.playsInline = true;
+    videoEl.setAttribute('playsinline', '');
+    videoEl.setAttribute('webkit-playsinline', '');
 
     // Let's make sure this thing scales to the host container.
     videoEl.style.width = '100%';
@@ -255,11 +265,63 @@ export function useYoutubePlayer() {
       playerState.value = (player.isBuffering() || (event as any).buffering) ? 'buffering' : 'ready';
     });
 
+    const allEvents = [
+      'error',
+      'loading',
+      'loaded',
+      'streaming',
+      'adaptation',
+      'buffering',
+      'trackschanged',
+      'texttrackvisibility',
+      'variantchanged',
+      'abrstatuschanged',
+      'timelineregionenter',
+      'timelineregionexit',
+      'emsg',
+      'largegap',
+      'stalldetected',
+      'manifestparsed',
+      'manifestupdated',
+      'drmsessionupdate',
+      'expirationupdated',
+      'unloading',
+      'metadata',
+    ];
+
+    allEvents.forEach((eventName) => {
+      player.addEventListener(eventName, (event: any) => {
+        onPlayerStateChanged({eventName});
+      });
+    });
+
+    let lastTime = -1;
+    videoEl.addEventListener('timeupdate', () => {
+      const currentTime = videoEl.currentTime;
+      const duration = videoEl.duration;
+      if (!duration || duration === Infinity) return;
+      if (Math.abs(currentTime - lastTime) >= 1 || currentTime >= duration) {
+        lastTime = currentTime;
+        onPlayerStateChanged({
+          status: 'progress',
+          currentTime,
+          duration,
+        });
+      }
+    });
+
+    videoEl.addEventListener('ended', () => {
+      console.log('[VIDEO] Playback ended');
+      onPlayerStateChanged({
+        status: 'ended',
+      });
+    });
+
     await player.attach(videoEl);
     const ui = new shaka.ui.Overlay(player, shakaContainer, videoEl);
 
     ui.configure({
-      addBigPlayButton: false,
+      addBigPlayButton: true,
       overflowMenuButtons: [
         'captions',
         'quality',
@@ -276,13 +338,15 @@ export function useYoutubePlayer() {
     });
 
     const volumeContainer = shakaContainer.getElementsByClassName('shaka-volume-bar-container');
-    volumeContainer[0].addEventListener('mousewheel', (event) => {
-      event.preventDefault();
-      const delta = Math.sign((event as any).deltaY);
-      const newVolume = Math.max(0, Math.min(1, videoEl.volume - delta * 0.05));
-      videoEl.volume = newVolume;
-      saveVolume(newVolume);
-    });
+    if (volumeContainer && volumeContainer.length > 0) {
+      volumeContainer[0].addEventListener('mousewheel', (event) => {
+        event.preventDefault();
+        const delta = Math.sign((event as any).deltaY);
+        const newVolume = Math.max(0, Math.min(1, videoEl.volume - delta * 0.05));
+        videoEl.volume = newVolume;
+        saveVolume(newVolume);
+      });
+    }
 
     playerComponents.value.player = player;
     playerComponents.value.ui = ui;
@@ -418,7 +482,7 @@ export function useYoutubePlayer() {
 
     const savedPosition = getPlaybackPosition(currentVideoId);
     if (savedPosition > 0) {
-      requestParams.startTimeSecs = Math.floor(savedPosition);
+      // requestParams.startTimeSecs = Math.floor(savedPosition);
     }
 
     if (reloadPlaybackContext) {
@@ -656,7 +720,7 @@ export function useYoutubePlayer() {
   });
 
   return {
-    player: playerComponents.value.player,
+    player: playerComponents,
     ui: playerComponents.value.ui,
     playerState,
     loadVideo

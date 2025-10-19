@@ -209,15 +209,17 @@ export function useYoutubePlayer() {
 
     const videoEl = document.createElement('video');
     videoEl.autoplay = true;
+    // videoEl.muted = true;
     videoEl.playsInline = true;
     videoEl.setAttribute('playsinline', '');
     videoEl.setAttribute('webkit-playsinline', '');
 
     // Let's make sure this thing scales to the host container.
-    videoEl.style.width = '100%';
-    videoEl.style.height = '100%';
+    videoEl.style.width = '100vw';
+    videoEl.style.height = '100vh';
     shakaContainer.appendChild(videoEl);
 
+    /*
     const loadingOverlay = document.createElement('div');
     loadingOverlay.className = 'loading-overlay';
 
@@ -226,6 +228,7 @@ export function useYoutubePlayer() {
 
     loadingOverlay.appendChild(spinner);
     shakaContainer.appendChild(loadingOverlay);
+    */
 
     const player = new shaka.Player();
 
@@ -271,6 +274,16 @@ export function useYoutubePlayer() {
       'error',
       'loading',
       'loaded',
+      'ended',
+      'play',
+      'playing',
+      'Complete',
+      'ErrorEvent',
+      'KeyStatusChanged',
+      'LoadedEvent',
+      'LoadingEvent',
+      'Started',
+      'StateChanged',
       'streaming',
       'adaptation',
       'buffering',
@@ -293,6 +306,7 @@ export function useYoutubePlayer() {
 
     allEvents.forEach((eventName) => {
       player.addEventListener(eventName, (_event: any) => {
+        console.log('saka event ' + eventName, _event);
         onPlayerStateChanged({eventName});
       });
     });
@@ -320,6 +334,12 @@ export function useYoutubePlayer() {
       });
     });
 
+    videoEl.addEventListener('playing', () => {
+      onPlayerStateChanged({
+        status: 'playing',
+      });
+    });
+
     videoEl.addEventListener('play', () => {
       onPlayerStateChanged({
         status: 'play',
@@ -327,6 +347,7 @@ export function useYoutubePlayer() {
     });
 
     await player.attach(videoEl);
+    /*
     const ui = new shaka.ui.Overlay(player, shakaContainer, videoEl);
 
     ui.configure({
@@ -366,19 +387,21 @@ export function useYoutubePlayer() {
         saveVolume(newVolume);
       });
     }
+    */
 
     playerComponents.value.player = player;
-    playerComponents.value.ui = ui;
+    // playerComponents.value.ui = ui;
     playerComponents.value.videoElement = videoEl;
     playerComponents.value.shakaContainer = shakaContainer;
-    playerComponents.value.customSpinner = loadingOverlay;
-
+    // playerComponents.value.customSpinner = loadingOverlay;
+    /*
     watch(playerState, (newState) => {
       if (loadingOverlay) {
         const isVisible = [ 'loading', 'buffering' ].includes(newState);
         loadingOverlay.style.display = isVisible ? 'flex' : 'none';
       }
     });
+    */
   }
 
   async function initializeSabrAdapter() {
@@ -507,7 +530,8 @@ export function useYoutubePlayer() {
     if (reloadPlaybackContext) {
       requestParams.playbackContext.reloadPlaybackContext = reloadPlaybackContext;
     }
-
+    return await innertube.actions.execute('/player', { ...requestParams, parse: false });
+    
     try {
       return await makePlayerRequest({
         clientConfig,
@@ -723,6 +747,8 @@ export function useYoutubePlayer() {
 
       startSavingPosition();
       playerState.value = 'ready';
+      // auto play
+      controlPlayer('play', null);
     } catch (error) {
       console.error(error);
       playerState.value = 'error';
@@ -743,16 +769,20 @@ export function useYoutubePlayer() {
     await cleanupPreviousVideo();
   });
 
-  function controlPlayer(cmd: string, _data: any) {
+  function controlPlayer(cmd: string, data: any) {
     if (cmd == 'pause') {
       playerComponents.value.videoElement?.pause();
     } else if (cmd == 'play') {
       playerComponents.value.videoElement?.play();
+    } else if (cmd == 'seekTo') {
+      if (playerComponents.value?.videoElement != null) {
+        playerComponents.value.videoElement!.currentTime = data;
+      }
     }
   }
 
   return {
-    player: playerComponents,
+    playerComponents: playerComponents,
     ui: playerComponents.value.ui,
     playerState,
     loadVideo,

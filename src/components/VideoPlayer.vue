@@ -2,7 +2,7 @@
 .video-player-container {
   overflow: hidden;
   position: relative;
-  aspect-ratio: 16 / 9;
+  /* aspect-ratio: 16 / 9; */
   width: 100%;
 }
 
@@ -61,12 +61,13 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import { useYoutubePlayer } from '@/composables/useYoutubePlayer';
+import { useAppPlayerInterface } from '@/composables/app_player_interface';
 
 const { videoId } = defineProps<{ videoId: string; }>();
 
 const playerHostElement = ref<HTMLElement | null>(null);
 
-const {player, ui, playerState, loadVideo, controlPlayer} = useYoutubePlayer();
+const {playerComponents, ui, playerState, loadVideo, controlPlayer} = useYoutubePlayer();
 
 async function load(id: string) {
   if (!playerHostElement.value) return;
@@ -76,47 +77,11 @@ async function load(id: string) {
 watch(() => videoId, (newId) => load(newId));
 onMounted(() => {
   load(videoId);
-  if (window != null) {
-    let mWindow = (window as any);
-    mWindow.myPlayerControl = {
-      player: player,
-      load: load,
-    };
-    mWindow.playbackStatus = {
-      lastPlay: 0,
-      lastPause: 0,
-    }
-    function resumePlayerIfNeeded() {
-      let duration = Date.now() - mWindow.playbackStatus.lastPause;
-      console.log('duration', duration);
-      if (duration < 1000) {
-        controlPlayer('play', null);
-      }
-    }
-    mWindow.handleAppCmd = (data: any) => {
-      let cmd = data.cmd;
-      if (cmd == 'appLifecycleState') {
-        let state = data.state;
-        if (state == 'paused') {
-          resumePlayerIfNeeded();
-        } else if (state == 'resumed') {
-          resumePlayerIfNeeded();
-        }
-      }
-    }
-
-    if (mWindow.onPlayerStateChanged == null) {
-      mWindow.onPlayerStateChanged = (state: any) => {
-        /// state.status: unloading/buffering/progress/ended
-        let status = state.status;
-        // console.log(`onPlayerState ${status}`);
-        if (status == 'pause') {
-          mWindow.playbackStatus.lastPause = Date.now();
-        } else if (status == 'progress') {
-          mWindow.playbackStatus.lastPlay = Date.now();
-        }
-      };
-    }
-  }
+  const {initInterface} = useAppPlayerInterface();
+  initInterface({
+    load: load,
+    playerComponents: playerComponents,
+    controlPlayer: controlPlayer,
+  });
 });
 </script>

@@ -231,6 +231,9 @@ export function useYoutubePlayer() {
 
     player.configure({
       preferredAudioLanguage: 'en-US',
+      // Ưu tiên codec ở cấp cấu hình chung
+      preferredVideoCodecs: ['avc1'], // H.264 family
+      preferredAudioCodecs: ['mp4a'], // AAC family
       abr: DEFAULT_ABR_CONFIG,
       streaming: {
         failureCallback: (error: shaka.util.Error) => {

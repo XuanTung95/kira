@@ -281,9 +281,8 @@ body {
   }
 
   .app {
-    margin: 12px;
-    height: calc(100vh - 24px);
-    overflow-y: scroll;
+    height: calc(100vh);
+    /* overflow-y: scroll; */
   }
 
 

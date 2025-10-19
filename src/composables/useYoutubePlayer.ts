@@ -80,7 +80,6 @@ export function useYoutubePlayer() {
   const sessionId = Array.from(Array(16), () => Math.floor(Math.random() * 36).toString(36)).join('');
 
   function onPlayerStateChanged(state: any) {
-    console.log(`[SHAKA] State change: `, state);
     if (window && (window as any).onPlayerStateChanged != null) {
       (window as any).onPlayerStateChanged(state);
     }
@@ -290,30 +289,37 @@ export function useYoutubePlayer() {
     ];
 
     allEvents.forEach((eventName) => {
-      player.addEventListener(eventName, (event: any) => {
+      player.addEventListener(eventName, (_event: any) => {
         onPlayerStateChanged({eventName});
       });
     });
 
-    let lastTime = -1;
     videoEl.addEventListener('timeupdate', () => {
       const currentTime = videoEl.currentTime;
       const duration = videoEl.duration;
       if (!duration || duration === Infinity) return;
-      if (Math.abs(currentTime - lastTime) >= 1 || currentTime >= duration) {
-        lastTime = currentTime;
-        onPlayerStateChanged({
-          status: 'progress',
-          currentTime,
-          duration,
-        });
-      }
+      onPlayerStateChanged({
+        status: 'progress',
+        currentTime,
+        duration,
+      });
     });
 
     videoEl.addEventListener('ended', () => {
-      console.log('[VIDEO] Playback ended');
       onPlayerStateChanged({
         status: 'ended',
+      });
+    });
+
+    videoEl.addEventListener('pause', () => {
+      onPlayerStateChanged({
+        status: 'pause',
+      });
+    });
+
+    videoEl.addEventListener('play', () => {
+      onPlayerStateChanged({
+        status: 'play',
       });
     });
 
@@ -322,17 +328,27 @@ export function useYoutubePlayer() {
 
     ui.configure({
       addBigPlayButton: true,
+      // doubleClickForFullscreen: false,
+      // enableFullscreenOnRotation: false,
+      // forceLandscapeOnFullscreen: false,
+      // preferVideoFullScreenInVisionOS: false,
+      // closeMenusDelay: 3000,
+      // displayInVrMode: false,
+      // setupMediaSession: true,
+      // clearBufferOnQualityChange: true,
+      // fullScreenElement: null,
       overflowMenuButtons: [
         'captions',
         'quality',
         'language',
-        'chapter',
         'picture_in_picture',
-        'playback_rate',
         'loop',
-        'recenter_vr',
-        'toggle_stereoscopic',
-        'save_video_frame'
+
+        // 'chapter',
+        // 'playback_rate',
+        // 'recenter_vr',
+        // 'toggle_stereoscopic',
+        // 'save_video_frame'
       ],
       customContextMenu: true
     });
@@ -688,10 +704,15 @@ export function useYoutubePlayer() {
       await setupRequestFilters();
 
       const videoInfo = await fetchVideoInfo(videoId);
+      document.title = videoInfo?.data?.videoDetails?.title ?? 'Player';
       if (videoInfo.data.playabilityStatus?.status !== 'OK') {
         console.error('[Player]', 'Unplayable:', videoInfo.data.playabilityStatus?.reason || 'Unknown reason');
         addToast('Unplayable video.', 'error');
         playerState.value = 'error';
+        onPlayerStateChanged({
+          status: 'error',
+          msg: 'Unplayable video.',
+        });
         return;
       }
 
@@ -719,10 +740,19 @@ export function useYoutubePlayer() {
     await cleanupPreviousVideo();
   });
 
+  function controlPlayer(cmd: string, _data: any) {
+    if (cmd == 'pause') {
+      playerComponents.value.videoElement?.pause();
+    } else if (cmd == 'play') {
+      playerComponents.value.videoElement?.play();
+    }
+  }
+
   return {
     player: playerComponents,
     ui: playerComponents.value.ui,
     playerState,
-    loadVideo
+    loadVideo,
+    controlPlayer,
   };
 }

@@ -10,7 +10,6 @@
 .primary {
   flex: 1;
   min-width: 0;
-  margin-top: 15px;
 }
 
 .secondary {
@@ -114,6 +113,24 @@
   100% {
     opacity: 1;
   }
+}
+
+:deep(.shaka-video) {
+  position: fixed !important;
+}
+
+:deep(.shaka-play-button) {
+  padding: min(50px, calc(15% / 2));
+}
+
+:deep(.shaka-controls-container) {
+  position: fixed !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+:deep(.shaka-overflow-menu button) {
+  padding: 2px;
 }
 
 :deep(a) {
@@ -241,6 +258,6 @@ watch(() => route.params.id, (newId) => {
   videoId.value = newId.toString();
   relatedVideos.value = [];
   videoDetails.value = undefined;
-  document.title = 'Loading... - Kira';
+  document.title = 'Player';
 });
 </script>

@@ -5,11 +5,14 @@ const PROXY_SETTINGS_KEY = 'proxy_settings';
 
 const settingsState = reactive<ProxySettings>({
   protocol: 'http',
-  host: '',
-  port: ''
+  // host: '127.0.0.1',
+  // port: '5173'
+  host: '192.168.1.124',
+  port: '8080'
 });
 
 function loadSettings() {
+  /*
   try {
     const savedSettings = localStorage.getItem(PROXY_SETTINGS_KEY);
     if (savedSettings) {
@@ -19,6 +22,7 @@ function loadSettings() {
   } catch (e) {
     console.error('Failed to load proxy settings', e);
   }
+  */
 }
 
 function saveSettings() {

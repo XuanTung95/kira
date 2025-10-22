@@ -5,10 +5,10 @@ const PROXY_SETTINGS_KEY = 'proxy_settings';
 
 const settingsState = reactive<ProxySettings>({
   protocol: 'http',
-  // host: '127.0.0.1',
-  // port: '5173'
-  host: '192.168.1.124',
-  port: '8080'
+  host: '127.0.0.1',
+  port: '5173'
+  // host: '192.168.1.124',
+  // port: '8080'
 });
 
 function loadSettings() {

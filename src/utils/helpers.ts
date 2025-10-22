@@ -235,6 +235,10 @@ export function configImageHttpProxy() {
     const originalSrc = img.src;
     if (!originalSrc) return;
 
+    if (originalSrc.includes('assets/5_seconds_of_silence.mp3')) {
+      return;
+    }
+
     try {
       const url = new URL(originalSrc);
 

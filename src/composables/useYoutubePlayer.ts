@@ -172,6 +172,10 @@ export function useYoutubePlayer() {
     const { player, sabrAdapter } = playerComponents.value;
 
     if (player) {
+      let video = player.getMediaElement();
+      if (video?.loop == true) {
+        video.loop = false;
+      }
       await player.unload();
       const networkingEngine = player.getNetworkingEngine();
       if (networkingEngine) {
@@ -203,6 +207,25 @@ export function useYoutubePlayer() {
     drmParams = undefined;
   }
 
+  function initMediaSession() {
+    if (navigator && 'mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+          if ((window as any)?.sendMessageToApp) {
+            (window as any).sendMessageToApp({
+                cmd: 'nexttrack'
+            })
+          }
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+            if ((window as any)?.sendMessageToApp) {
+            (window as any).sendMessageToApp({
+                cmd: 'previoustrack'
+            })
+          }
+        });
+    }
+  }
+
   async function initializeShakaPlayer() {
     const shakaContainer = document.createElement('div');
     shakaContainer.className = 'yt-player';
@@ -213,6 +236,7 @@ export function useYoutubePlayer() {
     videoEl.playsInline = true;
     videoEl.setAttribute('playsinline', '');
     videoEl.setAttribute('webkit-playsinline', '');
+    videoEl.setAttribute('onended', 'window.onKiraPlayerEnded(event)');
 
     // Let's make sure this thing scales to the host container.
     videoEl.style.width = '100vw';
@@ -749,10 +773,25 @@ export function useYoutubePlayer() {
       playerState.value = 'ready';
       // auto play
       controlPlayer('play', null);
+      initMediaSession();
     } catch (error) {
       console.error(error);
       playerState.value = 'error';
       addToast(`Error loading video: ${(error as any).message}`, 'error');
+    }
+  }
+
+  async function startSilencePlayer() {
+    console.log('startSilencePlayer');
+    await cleanupPreviousVideo();
+    const { player } = playerComponents.value;
+    if (player) {
+      let video = player.getMediaElement();
+      if (video) {
+        video.loop = true;
+        video.autoplay = true;
+      }
+      player.load('/assets/5_seconds_of_silence.mp3');
     }
   }
 
@@ -778,6 +817,8 @@ export function useYoutubePlayer() {
       if (playerComponents.value?.videoElement != null) {
         playerComponents.value.videoElement!.currentTime = data;
       }
+    } else if (cmd = 'startSilencePlayer') {
+      startSilencePlayer();
     }
   }
 

@@ -38,6 +38,9 @@ export function useAppPlayerInterface() {
                 seekTo: (data: number) => {
                     controlPlayer('seekTo', data);
                 },
+                startSilencePlayer: () => {
+                    controlPlayer('startSilencePlayer', null);
+                }
             }
 
             mWindow.handleAppCmd = (data: any) => {
@@ -91,6 +94,12 @@ export function useAppPlayerInterface() {
                     }
                 };
             }
+            mWindow.onKiraPlayerEnded = (_event: any) => {
+                console.log("call onKiraPlayerEnded");
+                controller.startSilencePlayer();
+            }
+
+            mWindow.sendMessageToApp = sendMessageToApp;
         }
     }
     return {

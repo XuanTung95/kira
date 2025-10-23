@@ -43,6 +43,7 @@ interface PlayerComponents {
   videoElement: HTMLVideoElement | null;
   shakaContainer: HTMLElement | null;
   customSpinner: HTMLElement | null;
+  audio: HTMLElement | null;
 }
 
 const playerComponents = shallowRef<PlayerComponents>({
@@ -51,6 +52,7 @@ const playerComponents = shallowRef<PlayerComponents>({
   sabrAdapter: null,
   videoElement: null,
   shakaContainer: null,
+  audio: null,
   customSpinner: null
 });
 
@@ -82,6 +84,30 @@ export function useYoutubePlayer() {
   function onPlayerStateChanged(state: any) {
     if (window && (window as any).onPlayerStateChanged != null) {
       (window as any).onPlayerStateChanged(state);
+    }
+  }
+
+  async function startSilencePlayer() {
+    var audio: any = playerComponents.value.audio;
+    if (audio == null) {
+      audio = document.getElementById("audioPlayer");
+      playerComponents.value.audio = audio;
+    }
+    if (audio != null && audio.paused != false) {
+      console.log('startSilencePlayer');
+      audio.play();
+    }
+  }
+
+  function stopSilentcePlayer() {
+    var audio : any = playerComponents.value.audio;
+    if (audio == null) {
+      audio = document.getElementById("audioPlayer");
+      playerComponents.value.audio = audio;
+    }
+    if (audio != null && audio.paused != true) {
+      console.log('stopSilentcePlayer()');
+      audio.pause()
     }
   }
 
@@ -172,10 +198,6 @@ export function useYoutubePlayer() {
     const { player, sabrAdapter } = playerComponents.value;
 
     if (player) {
-      let video = player.getMediaElement();
-      if (video?.loop == true) {
-        video.loop = false;
-      }
       await player.unload();
       const networkingEngine = player.getNetworkingEngine();
       if (networkingEngine) {
@@ -236,7 +258,7 @@ export function useYoutubePlayer() {
     videoEl.playsInline = true;
     videoEl.setAttribute('playsinline', '');
     videoEl.setAttribute('webkit-playsinline', '');
-    videoEl.setAttribute('onended', 'window.onKiraPlayerEnded(event)');
+    // videoEl.setAttribute('onended', 'window.onKiraPlayerEnded(event)');
 
     // Let's make sure this thing scales to the host container.
     videoEl.style.width = '100vw';
@@ -255,6 +277,43 @@ export function useYoutubePlayer() {
     */
 
     const player = new shaka.Player();
+
+    const allEvents = [
+      'error',
+      'onstatechange',
+      'timelineregionadded',
+      'mediaqualitychanged',
+      'buffering',
+      'loading',
+      'loaded',
+      'unloading',
+      'trackschanged',
+      'variantchanged',
+      'manifestparsed',
+      'metadataadded',
+      'streaming',
+      'abrstatuschanged',
+      // 'segmentappended',
+      'stalldetected',
+      'keystatuschanged',
+      'statechanged',
+      'started',
+      'complete',
+    ];
+    allEvents.forEach((eventName) => {
+      player.addEventListener(eventName, (_event: any) => {
+        console.log('shaka event ' + eventName, _event);
+        if (eventName == 'statechanged') {
+          let newstate = _event.newstate;
+          if (newstate == 'playing') {
+            stopSilentcePlayer();
+          } else if (newstate == 'ended') {
+            startSilencePlayer();
+          }
+          onPlayerStateChanged({status: newstate});
+        }
+      });
+    });
 
     player.configure({
       preferredAudioLanguage: 'en-US',
@@ -292,47 +351,6 @@ export function useYoutubePlayer() {
 
     player.addEventListener('buffering', (event: Event) => {
       playerState.value = (player.isBuffering() || (event as any).buffering) ? 'buffering' : 'ready';
-    });
-
-    const allEvents = [
-      'error',
-      'loading',
-      'loaded',
-      'ended',
-      'play',
-      'playing',
-      'Complete',
-      'ErrorEvent',
-      'KeyStatusChanged',
-      'LoadedEvent',
-      'LoadingEvent',
-      'Started',
-      'StateChanged',
-      'streaming',
-      'adaptation',
-      'buffering',
-      'trackschanged',
-      'texttrackvisibility',
-      'variantchanged',
-      'abrstatuschanged',
-      'timelineregionenter',
-      'timelineregionexit',
-      'emsg',
-      'largegap',
-      'stalldetected',
-      'manifestparsed',
-      'manifestupdated',
-      'drmsessionupdate',
-      'expirationupdated',
-      'unloading',
-      'metadata',
-    ];
-
-    allEvents.forEach((eventName) => {
-      player.addEventListener(eventName, (_event: any) => {
-        console.log('saka event ' + eventName, _event);
-        onPlayerStateChanged({eventName});
-      });
     });
 
     videoEl.addEventListener('timeupdate', () => {
@@ -781,20 +799,6 @@ export function useYoutubePlayer() {
     }
   }
 
-  async function startSilencePlayer() {
-    console.log('startSilencePlayer');
-    await cleanupPreviousVideo();
-    const { player } = playerComponents.value;
-    if (player) {
-      let video = player.getMediaElement();
-      if (video) {
-        video.loop = true;
-        video.autoplay = true;
-      }
-      player.load('/assets/5_seconds_of_silence.mp3');
-    }
-  }
-
   onUnmounted(async () => {
     const { videoElement, shakaContainer } = playerComponents.value;
 
@@ -819,6 +823,8 @@ export function useYoutubePlayer() {
       }
     } else if (cmd = 'startSilencePlayer') {
       startSilencePlayer();
+    } else if (cmd == 'stopSilentcePlayer') {
+      stopSilentcePlayer();
     }
   }
 

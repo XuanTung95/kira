@@ -94,10 +94,6 @@ export function useAppPlayerInterface() {
                     }
                 };
             }
-            mWindow.onKiraPlayerEnded = (_event: any) => {
-                console.log("call onKiraPlayerEnded");
-                controller.startSilencePlayer();
-            }
 
             mWindow.sendMessageToApp = sendMessageToApp;
         }

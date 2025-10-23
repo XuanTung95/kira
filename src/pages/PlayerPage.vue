@@ -235,7 +235,6 @@
 <template>
   <div class="watch-page">
     <div class="primary">
-      <button onclick="window.test()"></button>
       <VideoPlayer class="ytplayer" :videoId/>
       <audio id="audioPlayer" src="/assets/5_seconds_of_silence.mp3" loop></audio>
     </div>

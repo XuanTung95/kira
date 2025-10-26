@@ -289,7 +289,7 @@ export function getInjectedProxyFunction() {
   return (window as any).proxyFetch;
 }
 
-export async function fetchFunction(input: string | Request | URL, init?: RequestInit): Promise<Response> {
+export async function fetchFunction(input: string | Request | URL, init?: RequestInit, ignoreInjectedProxy = false): Promise<Response> {
   const url = input instanceof URL ? input : new URL(typeof input === 'string' ? input : input.url);
   const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
   const requestInit = { ...init, headers };
@@ -301,11 +301,13 @@ export async function fetchFunction(input: string | Request | URL, init?: Reques
   const proxyFetch = getInjectedProxyFunction();
 
   // Use the injected proxy from the extension, unless it's a googlevideo request (we use static rules for those).
-  if (proxyFetch) {
+  if (proxyFetch && !ignoreInjectedProxy) {
+    /*
     if (url.pathname.includes('initplayback')) {
       return fetch(url, requestInit);
     }
-    return proxyFetch(url.toString(), requestInit);
+    */
+    return proxyFetch(input, init);
   }
 
   // Fallback to whatever proxy server we may have.

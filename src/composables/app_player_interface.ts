@@ -188,7 +188,10 @@ export function useAppPlayerInterface() {
                 },
                 startSilencePlayer: () => {
                     controlPlayer('startSilencePlayer', null);
-                }
+                },
+                getTracks: () => {
+                    return controlPlayer('getTracks', null);
+                },
             }
 
             mWindow.handleAppCmd = async (data: any) => {
@@ -219,6 +222,8 @@ export function useAppPlayerInterface() {
                         cmd: cmd,
                         data: 'test',
                     }
+                } else if (cmd == 'getTracks') {
+                    return controller.getTracks();
                 }
             }
 

@@ -839,11 +839,48 @@ export function useYoutubePlayer() {
       if (playerComponents.value?.videoElement != null) {
         playerComponents.value.videoElement!.currentTime = data;
       }
-    } else if (cmd = 'startSilencePlayer') {
+    } else if (cmd == 'startSilencePlayer') {
       startSilencePlayer();
     } else if (cmd == 'stopSilentcePlayer') {
       stopSilentcePlayer();
+    } else if (cmd == 'getTracks') {
+      return getTracks();
     }
+  }
+
+  function getTracks() {
+    const { player } = playerComponents.value;
+    if (player) {
+      let tracks = player.getVariantTracks();
+      if (tracks) {
+        let activeTrack = tracks.find(track => track.active);
+        tracks = tracks.filter(t => {
+          return t.videoCodec && !t.videoCodec.includes('vp9');
+        });
+        var ret: Array<any> = [];
+        for (const item of tracks) {
+          if (!ret.some(x => x.height === item.height)) {
+            ret.push({
+              id: item.id,
+              resolution: `${item.width}x${item.height}`,
+              height: item.height,
+              active: item.active
+            });
+          }
+        }
+        if (activeTrack) {
+          for (const item of ret) {
+            if (item.height == activeTrack.height) {
+              item.active = true;
+            } else {
+              item.active = false;
+            }
+          }
+        }
+        return ret;
+      }
+    }
+    return [];
   }
 
   return {

@@ -245,6 +245,20 @@ export function useYoutubePlayer() {
             })
           }
         });
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (details.seekTime) {
+              controlPlayer('seekTo', details.seekTime)
+            }
+          }
+        );
+        navigator.mediaSession.setActionHandler('play', () => {
+            controlPlayer('play', null)
+          }
+        );
+        navigator.mediaSession.setActionHandler('pause', () => {
+            controlPlayer('pause', null)
+          }
+        );
     }
   }
 

@@ -365,6 +365,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { Innertube, Platform, UniversalCache, YTNodes, Types } from 'youtubei.js/web';
 import { base64ToU8 } from 'googlevideo/utils';
 import { botguardService } from '@/services/botguard';
+import {useAppPlayerInit} from '@/composables/app_player_interface';
 
 import {
   CLIENT_CONFIG_STORAGE_KEY,
@@ -419,6 +420,8 @@ Platform.shim.eval = async (data: Types.BuildScriptResult, env: Record<string, T
 };
 
 async function initInnertube() {
+  const {initEnvIfNeeded} = useAppPlayerInit();
+  await initEnvIfNeeded();
   const firstTime = await isFirstTime();
 
   try {

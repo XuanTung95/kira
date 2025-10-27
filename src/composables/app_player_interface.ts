@@ -170,7 +170,7 @@ export function useAppPlayerInterface() {
 
             function resumePlayerIfNeeded() {
                 let duration = Date.now() - (mWindow.appPlayer?.playHistory?.lastPause ?? 0);
-                console.log('duration', duration);
+                console.log('resumePlayer duration', duration);
                 if (duration < 1000) {
                     controlPlayer('play', null);
                 }
@@ -235,19 +235,32 @@ export function useAppPlayerInterface() {
                 mWindow.onPlayerStateChanged = (state: any) => {
                     /// state.status: unloading/buffering/progress/ended
                     let status = state.status;
-                    // console.log(`onPlayerState ${status}`);
-                    if (status == 'pause') {
+                    if (status != 'progress') {
+                        console.log(`onPlayerState ${status}`);
+                    }
+                    if (status == 'pause' || status == 'paused') {
                         sendMessageToApp({
                             cmd: 'statusChanged',
                             status: status,
                         });
                         mWindow.appPlayer.playHistory.lastPause = Date.now();
+                    } else if (status == 'playing') {
+                        sendMessageToApp({
+                            cmd: 'statusChanged',
+                            status: status,
+                        });
+                        mWindow.appPlayer.playHistory.lastPlay = Date.now();
                     } else if (status == 'progress') {
                         sendMessageToApp({
                             cmd: 'progressChanged',
                             state: state,
                         });
                         mWindow.appPlayer.playHistory.lastPlay = Date.now();
+                    } else if (status == 'ended') {
+                        sendMessageToApp({
+                            cmd: 'statusChanged',
+                            status: status,
+                        });
                     }
                 };
             }

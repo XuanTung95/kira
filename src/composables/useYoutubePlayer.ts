@@ -321,7 +321,8 @@ export function useYoutubePlayer() {
           let newstate = _event.newstate;
           if (newstate == 'playing') {
             stopSilentcePlayer();
-          } else if (newstate == 'ended') {
+          } else if (newstate == 'ended' || newstate == 'paused'
+             || newstate == 'buffering' || newstate == 'unload') {
             startSilencePlayer();
           }
           onPlayerStateChanged({status: newstate});
@@ -354,7 +355,20 @@ export function useYoutubePlayer() {
       }
     });
 
+    videoEl.addEventListener('timeupdate', () => {
+      const currentTime = videoEl.currentTime;
+      const duration = videoEl.duration;
+      if (!duration || duration === Infinity) return;
+      onPlayerStateChanged({
+        status: 'progress',
+        currentTime,
+        duration,
+      });
+      stopSilentcePlayer();
+    });
+
     videoEl.volume = getSavedVolume();
+    /*
     videoEl.addEventListener('volumechange', () => saveVolume(videoEl.volume));
     videoEl.addEventListener('playing', () => player.configure('abr.restrictions.maxHeight', Infinity));
     videoEl.addEventListener('pause', () => {
@@ -365,17 +379,6 @@ export function useYoutubePlayer() {
 
     player.addEventListener('buffering', (event: Event) => {
       playerState.value = (player.isBuffering() || (event as any).buffering) ? 'buffering' : 'ready';
-    });
-
-    videoEl.addEventListener('timeupdate', () => {
-      const currentTime = videoEl.currentTime;
-      const duration = videoEl.duration;
-      if (!duration || duration === Infinity) return;
-      onPlayerStateChanged({
-        status: 'progress',
-        currentTime,
-        duration,
-      });
     });
 
     videoEl.addEventListener('ended', () => {
@@ -401,6 +404,7 @@ export function useYoutubePlayer() {
         status: 'play',
       });
     });
+    */
 
     await player.attach(videoEl);
     /*

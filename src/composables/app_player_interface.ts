@@ -192,6 +192,9 @@ export function useAppPlayerInterface() {
                 getTracks: () => {
                     return controlPlayer('getTracks', null);
                 },
+                selectTrack: (data: any) => {
+                    return controlPlayer('selectTrack', data);
+                },
             }
 
             mWindow.handleAppCmd = async (data: any) => {
@@ -224,6 +227,8 @@ export function useAppPlayerInterface() {
                     }
                 } else if (cmd == 'getTracks') {
                     return controller.getTracks();
+                } else if (cmd == 'selectTrack') {
+                    return controller.selectTrack(data);
                 }
             }
 
@@ -265,6 +270,12 @@ export function useAppPlayerInterface() {
                         sendMessageToApp({
                             cmd: 'statusChanged',
                             status: status,
+                        });
+                    } else if (status == 'trackschanged') {
+                        let tracks = controller.getTracks();
+                        sendMessageToApp({
+                            cmd: 'getTracks',
+                            tracks: tracks,
                         });
                     }
                 };

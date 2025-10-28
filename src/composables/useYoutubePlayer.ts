@@ -326,6 +326,8 @@ export function useYoutubePlayer() {
             startSilencePlayer();
           }
           onPlayerStateChanged({status: newstate});
+        } else if (eventName == 'trackschanged') {
+          onPlayerStateChanged({status: eventName});
         }
       });
     });
@@ -845,6 +847,45 @@ export function useYoutubePlayer() {
       stopSilentcePlayer();
     } else if (cmd == 'getTracks') {
       return getTracks();
+    } else if (cmd == 'selectTrack') {
+      selectTrack(data.height, data.language);
+    } else if (cmd == 'setRepeat') {
+      setRepeat(data);
+    } else if (cmd == 'selectSpeed') {
+      selectSpeed(data);
+    }
+  }
+
+  function setRepeat(data: any) {
+
+  }
+
+  function selectSpeed(data: any) {
+
+  }
+
+  function selectTrack(height: any, language: any) {
+    const { player } = playerComponents.value;
+    if (player != null) {
+      let tracks = player.getVariantTracks();
+      if (tracks) {
+        let target = tracks.filter(t => {
+          return t.height == height 
+          && t.videoCodec && !t.videoCodec.includes('vp9');
+        });
+        let targetWithLang = target.filter(t => {
+          /// TODO: filter language
+          return true;
+        });
+        if (targetWithLang.length == 0) {
+          targetWithLang = target;
+        }
+        if (targetWithLang.length > 0) {
+          let track = targetWithLang[0];
+          player.configure({ abr: { enabled: false } });
+          player.selectVariantTrack(track, true)
+        }
+      }
     }
   }
 
@@ -862,7 +903,7 @@ export function useYoutubePlayer() {
           if (!ret.some(x => x.height === item.height)) {
             ret.push({
               id: item.id,
-              resolution: `${item.width}x${item.height}`,
+              name: `${item.height}p`,
               height: item.height,
               active: item.active
             });

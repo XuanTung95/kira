@@ -76,8 +76,7 @@ async function load(id: string) {
 
 watch(() => videoId, (newId) => load(newId));
 onMounted(async () => {
-  const {initInterface, initEnv} = useAppPlayerInterface();
-  await initEnv();
+  const {initInterface} = useAppPlayerInterface();
   load(videoId);
   initInterface({
     load: load,

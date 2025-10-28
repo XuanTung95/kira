@@ -148,6 +148,39 @@ async function initEnvIfNeeded() {
     return initEnv();
 }
 
+export function initWebMessage() {
+    let mWindow = (window as any);
+    if (mWindow != null && mWindow.webMessageData == null) {
+        mWindow.webMessageData = {
+            support: false,
+            onReceiveData: null,
+        }
+        let flutter_inappwebview = mWindow.flutter_inappwebview;
+        if (flutter_inappwebview != null) {
+            flutter_inappwebview.callHandler('sendToApp', {
+                'cmd': 'testWebMessage',
+            });
+            mWindow.addEventListener('message', function(event: any) {
+                if (event.data instanceof ArrayBuffer) {
+                    if (mWindow.webMessageData.support == false) {
+                        if (event.data.byteLength == 2) {
+                            mWindow.webMessageData.support = true;
+                            let flutter_inappwebview = mWindow.flutter_inappwebview;
+                            if (flutter_inappwebview != null) {
+                                flutter_inappwebview.callHandler('sendToApp', {
+                                    'cmd': 'supportWebMessage',
+                                    'support': true
+                                });
+                            }
+                        }
+                    } else {
+                    }
+                }
+            }, false);
+        }
+    }
+}
+
 export function useAppPlayerInit() {
     return {
         initEnvIfNeeded: initEnvIfNeeded,
@@ -338,7 +371,6 @@ export function useAppPlayerInterface() {
 
     return {
         initInterface: initInterface,
-        initEnv: initEnv,
         injectProxyFunction: injectProxyFunction,
     };
 }

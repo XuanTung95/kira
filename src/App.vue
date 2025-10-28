@@ -365,7 +365,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { Innertube, Platform, UniversalCache, YTNodes, Types } from 'youtubei.js/web';
 import { base64ToU8 } from 'googlevideo/utils';
 import { botguardService } from '@/services/botguard';
-import {useAppPlayerInit} from '@/composables/app_player_interface';
+import {useAppPlayerInit, initWebMessage} from '@/composables/app_player_interface';
 
 import {
   CLIENT_CONFIG_STORAGE_KEY,
@@ -611,6 +611,7 @@ innertubePromise = initInnertube();
 clientConfigPromise = fetchOnesieHotConfig();
 
 onMounted(async () => {
+  initWebMessage();
   const isExtensionInstalled = checkExtension();
 
   if (!isProxyConfigured.value && !isExtensionInstalled) {

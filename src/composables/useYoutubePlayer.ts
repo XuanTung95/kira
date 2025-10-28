@@ -898,8 +898,11 @@ export function useYoutubePlayer() {
           return t.height == height 
           && t.videoCodec && !t.videoCodec.includes('vp9');
         });
-        let targetWithLang = target.filter(t => {
+        let targetWithLang = target.filter((t) => {
           /// TODO: filter language
+          if (language || t) {
+
+          }
           return true;
         });
         if (targetWithLang.length == 0) {

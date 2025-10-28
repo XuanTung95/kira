@@ -7,6 +7,10 @@ export function getNewRequestId() {
     return _requestId;
 }
 
+let historyPlayback = {
+    firstPlayingInitId: '',
+}
+
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
     const binaryString = atob(base64);
     const len = binaryString.length;
@@ -132,6 +136,9 @@ async function initEnv() {
     if (res.injectProxy == true) {
         injectProxyFunction();
     }
+    if (res.playerSetting != null) {
+        (window as any).playerSetting = res.playerSetting;
+    }
 }
 
 async function initEnvIfNeeded() {
@@ -160,10 +167,12 @@ export function useAppPlayerInterface() {
         load,
         playerComponents,
         controlPlayer,
+        initVideoId,
     } : {
         load: (id: string) => Promise<void>;
         playerComponents: any;
         controlPlayer: (cmd: string, _data: any) => any;
+        initVideoId?: string,
     }) {
         if (window != null) {
             let mWindow = (window as any);
@@ -194,6 +203,12 @@ export function useAppPlayerInterface() {
                 },
                 selectTrack: (data: any) => {
                     return controlPlayer('selectTrack', data);
+                },
+                selectSpeed: (data: any) => {
+                    return controlPlayer('selectSpeed', data);
+                },
+                setLoop: (data: any) => {
+                    return controlPlayer('setLoop', data);
                 },
             }
 
@@ -229,18 +244,47 @@ export function useAppPlayerInterface() {
                     return controller.getTracks();
                 } else if (cmd == 'selectTrack') {
                     return controller.selectTrack(data);
+                } else if (cmd == 'selectSpeed') {
+                    return controller.selectSpeed(data);
+                } else if (cmd == 'setLoop') {
+                    return controller.setLoop(data);
                 }
             }
 
-            mWindow.appPlayer = {
-                playerComponents: playerComponents,
-                load: load,
-                playHistory: {
-                    lastPlay: 0,
-                    lastPause: 0,
-                },
-                controller: controller,
-            };
+            function loadVideo(videoId: string, height?: number, language?: string) {
+                if (mWindow.appPlayer != null) {
+                    mWindow.appPlayer.videoId = videoId;
+                    if (height != null) {
+                        mWindow.playerSetting.defaultHeight = height;
+                    }
+                    if (language != null) {
+                        mWindow.playerSetting.language = height;
+                    }
+                }
+                load(videoId);
+            }
+            if (mWindow.playerSetting == null) {
+                mWindow.playerSetting = {
+                    language: null,
+                    defaultHeight: 720,
+                }
+            }
+            if (mWindow.appPlayer == null) {
+                mWindow.appPlayer = {
+                    videoId: initVideoId,
+                    playerComponents: playerComponents,
+                    loadVideo: loadVideo,
+                    playHistory: {
+                        lastPlay: 0,
+                        lastPause: 0,
+                    },
+                    controller: controller,
+                };
+            }
+            mWindow.appPlayer.playerComponents = playerComponents;
+            mWindow.appPlayer.loadVideo = loadVideo;
+            mWindow.appPlayer.controller = controller;
+
             if (mWindow.onPlayerStateChanged == null) {
                 mWindow.onPlayerStateChanged = (state: any) => {
                     /// state.status: unloading/buffering/progress/ended
@@ -273,6 +317,13 @@ export function useAppPlayerInterface() {
                         });
                     } else if (status == 'trackschanged') {
                         let tracks = controller.getTracks();
+                        if (historyPlayback.firstPlayingInitId != mWindow.appPlayer.videoId) {
+                            historyPlayback.firstPlayingInitId = mWindow.appPlayer.videoId;
+                            controller.selectTrack({
+                                height: mWindow.playerSetting.defaultHeight,
+                                language: mWindow.playerSetting.language,
+                            });
+                        }
                         sendMessageToApp({
                             cmd: 'getTracks',
                             tracks: tracks,

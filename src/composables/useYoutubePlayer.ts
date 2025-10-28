@@ -327,6 +327,7 @@ export function useYoutubePlayer() {
           }
           onPlayerStateChanged({status: newstate});
         } else if (eventName == 'trackschanged') {
+          player.setTextTrackVisibility(false);
           onPlayerStateChanged({status: eventName});
         }
       });
@@ -778,9 +779,15 @@ export function useYoutubePlayer() {
         playerComponents.value.player.configure('abr', DEFAULT_ABR_CONFIG);
       }
 
-      const { shakaContainer } = playerComponents.value;
+      const { shakaContainer, videoElement } = playerComponents.value;
       if (shakaContainer && shakaContainer.parentElement !== targetContainer) {
         targetContainer.appendChild(shakaContainer);
+      }
+
+      if (videoElement != null) {
+        if (videoElement.loop == true) {
+          videoElement.loop = false;
+        }
       }
 
       const innertube = await getInnertube();
@@ -849,19 +856,37 @@ export function useYoutubePlayer() {
       return getTracks();
     } else if (cmd == 'selectTrack') {
       selectTrack(data.height, data.language);
-    } else if (cmd == 'setRepeat') {
-      setRepeat(data);
+    } else if (cmd == 'setLoop') {
+      setLoop(data);
     } else if (cmd == 'selectSpeed') {
       selectSpeed(data);
     }
   }
 
-  function setRepeat(data: any) {
-
+  function setLoop(data: any) {
+    let loop = data.loop;
+    if (loop != null) {
+      const { player } = playerComponents.value;
+      if (player != null) {
+        let video = player.getMediaElement();
+        if (video instanceof HTMLMediaElement) {
+          video.loop = loop;
+        }
+      }
+    }
   }
 
   function selectSpeed(data: any) {
-
+    let speed = data.speed;
+    if (speed != null) {
+      const { player } = playerComponents.value;
+      if (player != null) {
+        let video = player.getMediaElement();
+        if (video instanceof HTMLMediaElement) {
+          video.playbackRate = speed;
+        }
+      }
+    }
   }
 
   function selectTrack(height: any, language: any) {
@@ -882,8 +907,10 @@ export function useYoutubePlayer() {
         }
         if (targetWithLang.length > 0) {
           let track = targetWithLang[0];
-          player.configure({ abr: { enabled: false } });
-          player.selectVariantTrack(track, true)
+          if (track.active != true) {
+            player.configure({ abr: { enabled: false } });
+            player.selectVariantTrack(track, true)
+          }
         }
       }
     }

@@ -83,6 +83,7 @@ onMounted(async () => {
     load: load,
     playerComponents: playerComponents,
     controlPlayer: controlPlayer,
+    initVideoId: videoId,
   });
 });
 </script>

@@ -46,20 +46,47 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
     return bytes.buffer;
 }
 
-async function proxyFetch(input: string | Request | URL, init?: RequestInit): Promise<Response> {
-    if (window == null || !(window as any).flutter_inappwebview?.callHandler) {
-        return fetchFunction(input, init, true);
+async function checkProxy() {
+    if ((window as any).flutter_inappwebview == null) {
+        return false;
     }
-    let requestId = getNewRequestId();
+    const res = await (window as any).flutter_inappwebview.callHandler(
+        'sendToApp',
+        {
+            cmd: 'checkProxy',
+        },
+    );
+    return res.running == true;
+}
+
+async function proxyFetch(input: string | Request | URL, init?: RequestInit): Promise<Response> {
     const url =
         input instanceof URL
         ? input.toString()
         : typeof input === 'string'
         ? input
         : input.url;
-
+    let isProxyUrl = url.includes('__host');
+    if (window == null || !(window as any).flutter_inappwebview?.callHandler) {
+        if (isProxyUrl) {
+            return fetch(input, init);
+        } else {
+            return fetchFunction(input, init, true);
+        }
+    }
+    if (url.includes('/videoplayback?')) {
+        let running = await checkProxy();
+        if (running) {
+            if (isProxyUrl) {
+                return fetch(input, init);
+            } else {
+                return fetchFunction(input, init, true);
+            }
+        }
+    }
     const method = init?.method || (input instanceof Request ? input.method : 'GET');
     const headers: Record<string, string> = {};
+    let requestId = getNewRequestId();
 
     if (init?.headers) {
         const h = new Headers(init.headers);
@@ -144,7 +171,11 @@ async function proxyFetch(input: string | Request | URL, init?: RequestInit): Pr
         console.log('app proxy error', e);
     }
     
-    return fetchFunction(input, init, true);
+    if (isProxyUrl) {
+        return fetch(input, init);
+    } else {
+        return fetchFunction(input, init, true);
+    }
 }
 
 function injectProxyFunction() {
@@ -182,6 +213,7 @@ async function initEnvIfNeeded() {
 }
 
 export function initWebMessage() {
+    return;
     let mWindow = (window as any);
     if (mWindow != null && mWindow.webMessageData == null) {
         mWindow.webMessageData = {

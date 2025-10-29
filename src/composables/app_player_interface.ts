@@ -1,10 +1,35 @@
 import {fetchFunction } from '@/utils/helpers';
 
-let _requestId = 0;
+let _requestId: number = 0;
+
+type PendingPromise<T> = {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason?: any) => void;
+};
+
+const promiseMap = new Map<number, PendingPromise<any>>();
+
+function createPromise<T>(id: number): Promise<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: any) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  promiseMap.set(id, { promise, resolve, reject});
+  return promise;
+}
+
+function completePromise(id: number, value: any) {
+  const item = promiseMap.get(id);
+  if (item) {
+    item.resolve(value);
+  }
+}
 
 export function getNewRequestId() {
-    _requestId++;
-    return _requestId;
+    return _requestId++;
 }
 
 let historyPlayback = {
@@ -75,6 +100,7 @@ async function proxyFetch(input: string | Request | URL, init?: RequestInit): Pr
     let cmd = 'proxy';
     const req = { id: requestId, cmd, url, method, headers, body: bodyBase64 == null ? body : null, bodyBase64 };
     try {
+        createPromise(requestId);
         const res = await (window as any).flutter_inappwebview.callHandler(
             'sendToApp',
             req,
@@ -90,12 +116,20 @@ async function proxyFetch(input: string | Request | URL, init?: RequestInit): Pr
                     body = base64ToArrayBuffer(body);
                 }
             }
-            if (id != null) {
-                let response = new Response(body, {
+                let finalBody = body;
+                if (bodyType == 'webMessage') {
+                    let promise = promiseMap.get(requestId);
+                    if (promise != null) {
+                        let data = await promise.promise;
+                        finalBody = data;
+                    }
+                }
+                let response = new Response(finalBody, {
                     status: status,
                     headers: headers,
                     statusText: res.statusText ?? 'OK',
                 });
+                promiseMap.delete(requestId);
                 /*
                 Object.defineProperties(response, {
                     ok: { value: status >= 200 && status < 300 },
@@ -105,7 +139,6 @@ async function proxyFetch(input: string | Request | URL, init?: RequestInit): Pr
                 });
                 */
                 return response;
-            }
         }
     } catch (e) {
         console.log('app proxy error', e);
@@ -164,16 +197,24 @@ export function initWebMessage() {
                 if (event.data instanceof ArrayBuffer) {
                     if (mWindow.webMessageData.support == false) {
                         if (event.data.byteLength == 2) {
-                            mWindow.webMessageData.support = true;
-                            let flutter_inappwebview = mWindow.flutter_inappwebview;
-                            if (flutter_inappwebview != null) {
-                                flutter_inappwebview.callHandler('sendToApp', {
-                                    'cmd': 'supportWebMessage',
-                                    'support': true
-                                });
+                            const view = new Uint8Array(event.data);
+                            if (view.length == 2 && view[0] == 9 && view[1] == 5) {
+                                mWindow.webMessageData.support = true;
+                                let flutter_inappwebview = mWindow.flutter_inappwebview;
+                                if (flutter_inappwebview != null) {
+                                    flutter_inappwebview.callHandler('sendToApp', {
+                                        'cmd': 'supportWebMessage',
+                                        'support': true
+                                    });
+                                }
                             }
                         }
                     } else {
+                        let buffer = event.data;
+                        const view = new DataView(buffer);
+                        const id = view.getUint32(0, false);
+                        const originalBuffer = buffer.slice(4);
+                        completePromise(id, originalBuffer);
                     }
                 }
             }, false);

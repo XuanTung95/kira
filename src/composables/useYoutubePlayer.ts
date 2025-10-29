@@ -800,6 +800,10 @@ export function useYoutubePlayer() {
       await setupRequestFilters();
 
       const videoInfo = await fetchVideoInfo(videoId);
+      onPlayerStateChanged({
+        status: 'updateVideoInfo',
+        data: videoInfo?.data,
+      });
       document.title = videoInfo?.data?.videoDetails?.title ?? 'Player';
       if (videoInfo.data.playabilityStatus?.status !== 'OK') {
         console.error('[Player]', 'Unplayable:', videoInfo.data.playabilityStatus?.reason || 'Unknown reason');

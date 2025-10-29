@@ -439,6 +439,13 @@ export function useAppPlayerInterface() {
                             cmd: 'getTracks',
                             tracks: tracks,
                         });
+                    } else if (status == 'updateVideoInfo') {
+                        let data = state.data;
+                        console.log('updateVideoInfo', state);
+                        sendMessageToApp({
+                            cmd: 'updateVideoInfo',
+                            streamInfo: data,
+                        });
                     }
                 };
             }

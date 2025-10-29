@@ -860,6 +860,23 @@ export function useYoutubePlayer() {
       setLoop(data);
     } else if (cmd == 'selectSpeed') {
       selectSpeed(data);
+    } else if (cmd == 'enablePip') {
+      enablePip();
+    }
+  }
+
+  function enablePip() {
+    try {
+      const { videoElement } = playerComponents.value;
+      if (videoElement != null) {
+        if (document && document.pictureInPictureElement) {
+          document.exitPictureInPicture();
+        } else {
+          videoElement.requestPictureInPicture();
+        }
+      }
+    } catch (error) {
+      console.log('Picture-in-Picture:', error);
     }
   }
 

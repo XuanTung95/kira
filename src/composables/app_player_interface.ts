@@ -243,6 +243,9 @@ export function useAppPlayerInterface() {
                 setLoop: (data: any) => {
                     return controlPlayer('setLoop', data);
                 },
+                enablePip: (data: any) => {
+                    return controlPlayer('enablePip', data);
+                }
             }
 
             mWindow.handleAppCmd = async (data: any) => {
@@ -281,6 +284,8 @@ export function useAppPlayerInterface() {
                     return controller.selectSpeed(data);
                 } else if (cmd == 'setLoop') {
                     return controller.setLoop(data);
+                } else if (cmd == 'enablePip') {
+                    return controller.enablePip(data);
                 }
             }
 

@@ -229,7 +229,7 @@ export function useYoutubePlayer() {
     drmParams = undefined;
   }
 
-  function initMediaSession() {
+  function initMediaSession(videoInfo: ApiResponse) {
     if (navigator && 'mediaSession' in navigator) {
         navigator.mediaSession.setActionHandler('nexttrack', () => {
           if ((window as any)?.sendMessageToApp) {
@@ -259,6 +259,25 @@ export function useYoutubePlayer() {
             controlPlayer('pause', null)
           }
         );
+        let videoDetails = videoInfo?.data?.videoDetails;
+        let thumbnails = videoDetails?.thumbnail?.thumbnails;
+        if (thumbnails instanceof Array) {
+          const target = 138;
+          const smallest = thumbnails.reduce((prev, curr) => 
+            Math.abs(curr.height - target) < Math.abs(prev.height - target) ? curr : prev
+          );
+          if (smallest?.height != null) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: videoDetails?.title,
+              artist: videoDetails?.author,
+              // album: 'Album Name',
+              artwork: [
+                { src: smallest.url, sizes: `${smallest?.width}x${smallest?.height}`, type: 'image/jpeg' }
+              ]
+            });
+          }
+        }
+        
     }
   }
 
@@ -822,7 +841,7 @@ export function useYoutubePlayer() {
       playerState.value = 'ready';
       // auto play
       controlPlayer('play', null);
-      initMediaSession();
+      initMediaSession(videoInfo);
     } catch (error) {
       console.error(error);
       playerState.value = 'error';

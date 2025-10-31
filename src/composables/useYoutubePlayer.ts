@@ -363,7 +363,7 @@ export function useYoutubePlayer() {
           // Always retry after retries are exhausted (the default behaviour was to give up).
           console.error('Streaming failure:', error);
           playerState.value = 'error';
-          addToast(`Streaming error: ${error.message}`, 'error');
+          addToast(`Streaming error`);
           player.retryStreaming(5);
         },
         bufferingGoal: 120,
@@ -988,6 +988,7 @@ export function useYoutubePlayer() {
             }
           }
         }
+        ret.sort((a, b) => a.height - b.height);
         return ret;
       }
     }

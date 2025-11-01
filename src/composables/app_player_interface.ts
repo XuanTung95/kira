@@ -203,6 +203,12 @@ async function initEnv() {
     if (res.playerSetting != null) {
         (window as any).playerSetting = res.playerSetting;
     }
+    if (res.isAndroid != null) {
+        (window as any).isAndroid = res.isAndroid;
+    }
+    if (res.isIOS != null) {
+        (window as any).isIOS = res.isIOS;
+    }
 }
 
 async function initEnvIfNeeded() {
@@ -322,13 +328,19 @@ export function useAppPlayerInterface() {
             }
 
             mWindow.handleAppCmd = async (data: any) => {
+                console.log('handleAppCmd', data);
                 let cmd = data.cmd;
                 if (cmd == 'appLifecycleState') {
                     let state = data.state;
-                    if (state == 'paused') {
-                        resumePlayerIfNeeded();
-                    } else if (state == 'resumed') {
-                        resumePlayerIfNeeded();
+                    let isAndroid = data.isAndroid;
+                    if (isAndroid == true) {
+                        ///
+                    } else {
+                        if (state == 'paused') {
+                            resumePlayerIfNeeded();
+                        } else if (state == 'resumed') {
+                            resumePlayerIfNeeded();
+                        }
                     }
                 } else if (cmd == 'controller') {
                     let action = data.action;

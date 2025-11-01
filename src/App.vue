@@ -448,8 +448,8 @@ async function initInnertube() {
     innertubeInstance.value = instance;
     return instance;
   } catch (error) {
-    addToast('Failed to initialize InnerTube API', 'error');
-    console.error('[App]', 'Failed to initialize Innertube', error);
+    addToast('Failed to initialize API');
+    console.error('[App]', 'Failed to initialize', error);
     innertubePromise = undefined;
 
     // YouTube.js will fall back to local session generation if this is the first

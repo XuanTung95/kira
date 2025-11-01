@@ -324,6 +324,9 @@ export function useAppPlayerInterface() {
                 },
                 enablePip: (data: any) => {
                     return controlPlayer('enablePip', data);
+                },
+                preLoadVideo: (data: any) => {
+                    return controlPlayer('preLoadVideo', data);
                 }
             }
 
@@ -353,8 +356,7 @@ export function useAppPlayerInterface() {
                         controller.seekTo(actionData);
                     }
                 } else if (cmd == 'preLoadVideo') {
-                    let videoId = data.videoId;
-                    /// TODO: preload videoId
+                    controller.preLoadVideo(data);
                 } else if (cmd == 'getPlaybackInfo') {
                     /// TODO: return playback info
                     return {
@@ -412,6 +414,7 @@ export function useAppPlayerInterface() {
                 mWindow.onPlayerStateChanged = (state: any) => {
                     /// state.status: unloading/buffering/progress/ended
                     let status = state.status;
+                    let videoId = state.videoId;
                     if (status != 'progress') {
                         console.log(`onPlayerState ${status}`);
                     }
@@ -419,24 +422,28 @@ export function useAppPlayerInterface() {
                         sendMessageToApp({
                             cmd: 'statusChanged',
                             status: status,
+                            id: videoId,
                         });
                         mWindow.appPlayer.playHistory.lastPause = Date.now();
                     } else if (status == 'playing') {
                         sendMessageToApp({
                             cmd: 'statusChanged',
                             status: status,
+                            id: videoId,
                         });
                         mWindow.appPlayer.playHistory.lastPlay = Date.now();
                     } else if (status == 'progress') {
                         sendMessageToApp({
                             cmd: 'progressChanged',
                             state: state,
+                            id: videoId,
                         });
                         mWindow.appPlayer.playHistory.lastPlay = Date.now();
                     } else if (status == 'ended') {
                         sendMessageToApp({
                             cmd: 'statusChanged',
                             status: status,
+                            id: videoId,
                         });
                     } else if (status == 'trackschanged') {
                         let tracks = controller.getTracks();
@@ -450,6 +457,7 @@ export function useAppPlayerInterface() {
                         sendMessageToApp({
                             cmd: 'getTracks',
                             tracks: tracks,
+                            id: videoId,
                         });
                     } else if (status == 'updateVideoInfo') {
                         let data = state.data;
@@ -457,6 +465,7 @@ export function useAppPlayerInterface() {
                         sendMessageToApp({
                             cmd: 'updateVideoInfo',
                             streamInfo: data,
+                            id: videoId,
                         });
                     }
                 };

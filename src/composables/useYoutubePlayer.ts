@@ -18,6 +18,7 @@ import { useOnesieConfig } from './useOnesieConfig';
 import { useToastStore } from '@/stores/toastStore';
 import { useProxySettings } from '@/composables/useProxySettings';
 import { checkExtension } from '@/utils/helpers';
+import {preloadVideo, getPreloadVideo} from '@/composables/app_preload_video';
 
 const VOLUME_KEY = 'youtube_player_volume';
 const PLAYBACK_POSITION_KEY = 'youtube_playback_positions';
@@ -83,6 +84,9 @@ export function useYoutubePlayer() {
 
   function onPlayerStateChanged(state: any) {
     if (window && (window as any).onPlayerStateChanged != null) {
+      if (state != null && state.videoId == null) {
+        state.videoId = currentVideoId;
+      }
       (window as any).onPlayerStateChanged(state);
     }
   }
@@ -604,10 +608,10 @@ export function useYoutubePlayer() {
       }
     };
 
-    const savedPosition = getPlaybackPosition(currentVideoId);
-    if (savedPosition > 0) {
-      // requestParams.startTimeSecs = Math.floor(savedPosition);
-    }
+    // const savedPosition = getPlaybackPosition(currentVideoId);
+    // if (savedPosition > 0) {
+    //   requestParams.startTimeSecs = Math.floor(savedPosition);
+    // }
 
     if (reloadPlaybackContext) {
       requestParams.playbackContext.reloadPlaybackContext = reloadPlaybackContext;
@@ -789,6 +793,7 @@ export function useYoutubePlayer() {
     playbackWebPoToken = undefined;
 
     try {
+      startSilencePlayer();
       if (!playerComponents.value.player) {
         await initializeShakaPlayer();
       } else {
@@ -818,7 +823,12 @@ export function useYoutubePlayer() {
       await initializeSabrAdapter();
       await setupRequestFilters();
 
-      const videoInfo = await fetchVideoInfo(videoId);
+      let videoInfo = getPreloadVideo(videoId);
+      if (videoInfo?.data?.streamingData?.serverAbrStreamingUrl != null) {
+        console.log('Use stream from preload');
+      } else {
+        videoInfo = await fetchVideoInfo(videoId);
+      }
       onPlayerStateChanged({
         status: 'updateVideoInfo',
         data: videoInfo?.data,
@@ -885,6 +895,11 @@ export function useYoutubePlayer() {
       selectSpeed(data);
     } else if (cmd == 'enablePip') {
       enablePip();
+    } else if (cmd == 'preLoadVideo') {
+      let videoId = data.videoId;
+      if (videoId != null) {
+        preloadVideo(videoId, () => fetchVideoInfo(videoId));
+      }
     }
   }
 

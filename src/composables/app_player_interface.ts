@@ -366,6 +366,9 @@ export function useAppPlayerInterface() {
                 } else if (cmd == 'getTracks') {
                     return controller.getTracks();
                 } else if (cmd == 'selectTrack') {
+                    if (data.language != null && mWindow.playerSetting != null) {
+                        mWindow.playerSetting.language = data.language;
+                    }
                     return controller.selectTrack(data);
                 } else if (cmd == 'selectSpeed') {
                     return controller.selectSpeed(data);
@@ -379,6 +382,12 @@ export function useAppPlayerInterface() {
             function loadVideo(videoId: string, height?: number, language?: string) {
                 if (mWindow.appPlayer != null) {
                     mWindow.appPlayer.videoId = videoId;
+                    if (mWindow.playerSetting == null) {
+                        mWindow.playerSetting = {
+                            language: null,
+                            defaultHeight: 720,
+                        }
+                    }
                     if (height != null) {
                         mWindow.playerSetting.defaultHeight = height;
                     }

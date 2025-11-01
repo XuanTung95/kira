@@ -845,6 +845,13 @@ export function useYoutubePlayer() {
         return;
       }
 
+      if (window != null) {
+        let lang = (window as any)?.playerSetting?.language;
+        if (lang != null) {
+          playerComponents.value.player?.configure('preferredAudioLanguage', lang);
+        }
+      }
+
       await loadManifest(videoInfo);
 
       startSavingPosition();
@@ -954,14 +961,16 @@ export function useYoutubePlayer() {
           && t.videoCodec && !t.videoCodec.includes('vp9');
         });
         let targetWithLang = target.filter((t) => {
-          /// TODO: filter language
-          if (language || t) {
-
+          if (language && t.language) {
+            return t.language.includes(language);
           }
           return true;
         });
         if (targetWithLang.length == 0) {
-          targetWithLang = target;
+          let mainAudio = target.filter((t) => {
+            return t.audioRoles?.includes('main');
+          });
+          targetWithLang = mainAudio.length > 0 ? mainAudio : target;
         }
         if (targetWithLang.length > 0) {
           let track = targetWithLang[0];

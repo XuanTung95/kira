@@ -7,7 +7,7 @@ const settingsState = reactive<ProxySettings>({
   protocol: 'http',
   host: 'localhost',
   port: '5173'
-  // host: '192.168.1.220',
+  // host: 'localhost',
   // port: '8080'
 });
 

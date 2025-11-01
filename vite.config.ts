@@ -8,10 +8,12 @@ import { compression } from 'vite-plugin-compression2';
 export default defineConfig({
   plugins: [
     vue(),
+    /*
     compression({
       algorithms: ['brotliCompress', 'gzip'],
       exclude: [/\.(br)$/, /\.(gz)$/],
     })
+    */
   ],
   resolve: {
     alias: {

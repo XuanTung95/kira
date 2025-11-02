@@ -395,7 +395,19 @@ export function useYoutubePlayer() {
       stopSilentcePlayer();
     });
 
-    videoEl.volume = getSavedVolume();
+    videoEl.addEventListener('enterpictureinpicture', (e) => {
+      onPlayerStateChanged({
+        status: 'enterPIP',
+      });
+    });
+
+    videoEl.addEventListener('leavepictureinpicture', (e) => {
+      onPlayerStateChanged({
+        status: 'exitPIP',
+      });
+    });
+
+    // videoEl.volume = getSavedVolume();
     /*
     videoEl.addEventListener('volumechange', () => saveVolume(videoEl.volume));
     videoEl.addEventListener('playing', () => player.configure('abr.restrictions.maxHeight', Infinity));

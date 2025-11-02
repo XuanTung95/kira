@@ -495,6 +495,12 @@ export function useAppPlayerInterface() {
                             streamInfo: data,
                             id: videoId,
                         });
+                    } else if (status == 'enterPIP' || status == 'exitPIP') {
+                        sendMessageToApp({
+                            cmd: 'statusChanged',
+                            status: status,
+                            id: videoId,
+                        });
                     }
                 };
             }

@@ -395,13 +395,13 @@ export function useYoutubePlayer() {
       stopSilentcePlayer();
     });
 
-    videoEl.addEventListener('enterpictureinpicture', (e) => {
+    videoEl.addEventListener('enterpictureinpicture', (_e) => {
       onPlayerStateChanged({
         status: 'enterPIP',
       });
     });
 
-    videoEl.addEventListener('leavepictureinpicture', (e) => {
+    videoEl.addEventListener('leavepictureinpicture', (_e) => {
       onPlayerStateChanged({
         status: 'exitPIP',
       });

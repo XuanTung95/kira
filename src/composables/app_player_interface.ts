@@ -420,6 +420,7 @@ export function useAppPlayerInterface() {
             mWindow.appPlayer.controller = controller;
 
             if (mWindow.onPlayerStateChanged == null) {
+                let lastDurationUpdate = 0;
                 mWindow.onPlayerStateChanged = (state: any) => {
                     /// state.status: unloading/buffering/progress/ended
                     let status = state.status;
@@ -442,12 +443,30 @@ export function useAppPlayerInterface() {
                         });
                         mWindow.appPlayer.playHistory.lastPlay = Date.now();
                     } else if (status == 'progress') {
+                        mWindow.appPlayer.playHistory.lastPlay = Date.now();
+                        let currentTime = state.currentTime;
+                        let duration = state.duration;
+                        let player = state.player;
+                        if (currentTime == null || Math.abs(currentTime - lastDurationUpdate) < 0.9) {
+                            return;
+                        }
+                        lastDurationUpdate = currentTime;
+                        if (!duration || duration === Infinity) {
+                            /// case live stream
+                            let range = player?.seekRange();
+                            if (range == null || range.end == null || range.end === Infinity || range.end === 0) {
+                                return;
+                            }
+                            duration = range.end;
+                        }
                         sendMessageToApp({
                             cmd: 'progressChanged',
-                            state: state,
+                            state: {
+                                currentTime,
+                                duration,
+                            },
                             id: videoId,
                         });
-                        mWindow.appPlayer.playHistory.lastPlay = Date.now();
                     } else if (status == 'ended') {
                         sendMessageToApp({
                             cmd: 'statusChanged',

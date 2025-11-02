@@ -318,7 +318,7 @@ export function useYoutubePlayer() {
     const allEvents = [
       'error',
       'onstatechange',
-      'timelineregionadded',
+      // 'timelineregionadded',
       'mediaqualitychanged',
       'buffering',
       'loading',
@@ -331,7 +331,9 @@ export function useYoutubePlayer() {
       'streaming',
       'abrstatuschanged',
       // 'segmentappended',
-      'stalldetected',
+      // 'manifestupdated',
+      // 'canupdatestarttime',
+      // 'stalldetected',
       'keystatuschanged',
       'statechanged',
       'started',
@@ -384,11 +386,11 @@ export function useYoutubePlayer() {
     videoEl.addEventListener('timeupdate', () => {
       const currentTime = videoEl.currentTime;
       const duration = videoEl.duration;
-      if (!duration || duration === Infinity) return;
       onPlayerStateChanged({
         status: 'progress',
         currentTime,
         duration,
+        player,
       });
       stopSilentcePlayer();
     });

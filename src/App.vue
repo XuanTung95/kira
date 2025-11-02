@@ -338,11 +338,13 @@ body {
       <router-view/>
     </div>
     <ToastNotification/>
+    <!--
     <SettingsDialog
       v-if="showSettingsDialog"
       @close="showSettingsDialog = false"
       @save="saveSettings"
     />
+    -->
   </div>
 </template>
 

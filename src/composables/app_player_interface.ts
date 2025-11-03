@@ -304,6 +304,9 @@ export function useAppPlayerInterface() {
                 pause: () => {
                     controlPlayer('pause', null);
                 },
+                playOrPause: () => {
+                    controlPlayer('playOrPause', null);
+                },
                 seekTo: (data: number) => {
                     controlPlayer('seekTo', data);
                 },
@@ -325,12 +328,15 @@ export function useAppPlayerInterface() {
                 enablePip: (data: any) => {
                     return controlPlayer('enablePip', data);
                 },
+                volume: (data: any) => {
+                    return controlPlayer('volume', data);
+                },
                 preLoadVideo: (data: any) => {
                     return controlPlayer('preLoadVideo', data);
                 }
             }
 
-            mWindow.handleAppCmd = async (data: any) => {
+            mWindow.handleAppCmd = (data: any) => {
                 console.log('handleAppCmd', data);
                 let cmd = data.cmd;
                 if (cmd == 'appLifecycleState') {
@@ -348,9 +354,9 @@ export function useAppPlayerInterface() {
                 } else if (cmd == 'controller') {
                     let action = data.action;
                     if (action == 'play') {
-                        controller.play();
+                        controller.playOrPause();
                     } else if (action == 'pause') {
-                        controller.pause();
+                        controller.playOrPause();
                     } else if (action == 'seekTo') {
                         let actionData = data.data;
                         controller.seekTo(actionData);
@@ -376,6 +382,8 @@ export function useAppPlayerInterface() {
                     return controller.setLoop(data);
                 } else if (cmd == 'enablePip') {
                     return controller.enablePip(data);
+                } else if (cmd == 'volume') {
+                    return controller.volume(data);
                 }
             }
 
@@ -501,6 +509,9 @@ export function useAppPlayerInterface() {
                             status: status,
                             id: videoId,
                         });
+                    } else {
+                        state.cmd = 'debug';
+                        sendMessageToApp(state);
                     }
                 };
             }

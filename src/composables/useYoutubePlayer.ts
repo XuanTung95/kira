@@ -354,6 +354,11 @@ export function useYoutubePlayer() {
         } else if (eventName == 'trackschanged') {
           player.setTextTrackVisibility(false);
           onPlayerStateChanged({status: eventName});
+        } else {
+          onPlayerStateChanged({
+            status: eventName,
+            msg: `${_event}`,
+          });
         }
       });
     });
@@ -371,6 +376,10 @@ export function useYoutubePlayer() {
           playerState.value = 'error';
           addToast(`Streaming error`);
           player.retryStreaming(5);
+          onPlayerStateChanged({
+            status: 'error',
+            msg: `Streaming error ${error}`
+          });
         },
         bufferingGoal: 120,
         rebufferingGoal: 0.01,
@@ -898,6 +907,24 @@ export function useYoutubePlayer() {
       playerComponents.value.videoElement?.pause();
     } else if (cmd == 'play') {
       playerComponents.value.videoElement?.play();
+    } else if (cmd == 'playOrPause') {
+      let video = playerComponents.value.videoElement;
+      if (video != null) {
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
+      }
+    } else if (cmd == 'volume') {
+      let volume = data.volume;
+      if (volume != null) {
+        let video = playerComponents.value.videoElement;
+        if (video != null) {
+          const newVolume = Math.max(0, Math.min(1, volume));
+          video.volume = newVolume;
+        }
+      }
     } else if (cmd == 'seekTo') {
       if (playerComponents.value?.videoElement != null) {
         playerComponents.value.videoElement!.currentTime = data;

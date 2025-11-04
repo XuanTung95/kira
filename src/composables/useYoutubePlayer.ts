@@ -91,6 +91,36 @@ export function useYoutubePlayer() {
     }
   }
 
+  function updateMediaSessionPosition() {
+    if (navigator && 'mediaSession' in navigator) {
+      let { videoElement, player } = playerComponents.value;
+      if (player != null && videoElement != null) {
+        let currentTime = videoElement.currentTime;
+        let duration = videoElement.duration;
+        if (!duration || duration === Infinity) {
+          let range = player.seekRange();
+          if (range.end != null && range.end != Infinity || range.end === 0) {
+              duration = range.end;
+              if (currentTime != null && duration < currentTime) {
+                currentTime = duration;
+              }
+          }
+        }
+        let rate = videoElement.playbackRate;
+        if (currentTime != null && currentTime != Infinity && duration != null && duration != Infinity) {
+          let state = {
+            duration: duration,
+            playbackRate: rate,
+            position: currentTime
+          };
+          console.log('update session pos', state)
+          navigator.mediaSession.setPositionState(state);
+          navigator.mediaSession.playbackState = videoElement.paused ? "paused" : "playing";
+        }
+      }
+    }
+  }
+
   async function startSilencePlayer() {
     var audio: any = playerComponents.value.audio;
     if (audio == null) {
@@ -256,11 +286,11 @@ export function useYoutubePlayer() {
           }
         );
         navigator.mediaSession.setActionHandler('play', () => {
-            controlPlayer('play', null)
+            controlPlayer('playOrPause', null)
           }
         );
         navigator.mediaSession.setActionHandler('pause', () => {
-            controlPlayer('pause', null)
+            controlPlayer('playOrPause', null)
           }
         );
         let videoDetails = videoInfo?.data?.videoDetails;
@@ -346,6 +376,7 @@ export function useYoutubePlayer() {
           let newstate = _event.newstate;
           if (newstate == 'playing') {
             stopSilentcePlayer();
+            updateMediaSessionPosition();
           } else if (newstate == 'ended' || newstate == 'paused'
              || newstate == 'buffering' || newstate == 'unload') {
             startSilencePlayer();

@@ -418,7 +418,7 @@ export function useYoutubePlayer() {
     });
 
     player.configure({
-      preferredAudioLanguage: 'en-US',
+      // preferredAudioLanguage: 'en-US',
       // Ưu tiên codec ở cấp cấu hình chung
       preferredVideoCodecs: ['avc1'], // H.264 family
       preferredAudioCodecs: ['mp4a'], // AAC family
@@ -922,12 +922,14 @@ export function useYoutubePlayer() {
         return;
       }
 
+      /*
       if (window != null) {
         let lang = (window as any)?.playerSetting?.language;
         if (lang != null) {
           playerComponents.value.player?.configure('preferredAudioLanguage', lang);
         }
       }
+      */
 
       await loadManifest(videoInfo);
 

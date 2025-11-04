@@ -293,6 +293,7 @@ export function useAppPlayerInterface() {
                 let duration = Date.now() - (mWindow.appPlayer?.playHistory?.lastPause ?? 0);
                 console.log('resumePlayer duration', duration);
                 if (duration < 1000) {
+                    console.log('resumePlayer cmd play');
                     controlPlayer('play', null);
                 }
             }

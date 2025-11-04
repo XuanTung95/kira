@@ -121,6 +121,26 @@ export function useYoutubePlayer() {
     }
   }
 
+  function enableAutoArbIfNeeded() {
+    let player = playerComponents.value.player;
+    if (player != null) {
+      let stats = player.getStats();
+      let est = stats.estimatedBandwidth;
+      let stream = stats.streamBandwidth;
+      if (est != null && stream != null && stream != 0
+        && est != 0 && est != Infinity && stream != Infinity) {
+          let ratio = est / stream;
+          if (ratio != Infinity && ratio <= 0.7) {
+            player.configure({ abr: { enabled: true } });
+            onPlayerStateChanged({
+              status: 'debug',
+              msg: `abr: enabled: true est ${est} / str ${stream} = ${ratio}`,
+            });
+          }
+      }
+    }
+  }
+
   async function startSilencePlayer() {
     var audio: any = playerComponents.value.audio;
     if (audio == null) {
@@ -380,6 +400,9 @@ export function useYoutubePlayer() {
           } else if (newstate == 'ended' || newstate == 'paused'
              || newstate == 'buffering' || newstate == 'unload') {
             startSilencePlayer();
+          }
+          if (newstate == "buffering") {
+             enableAutoArbIfNeeded();
           }
           onPlayerStateChanged({status: newstate});
         } else if (eventName == 'trackschanged') {

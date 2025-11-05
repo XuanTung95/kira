@@ -62,6 +62,34 @@ const playerState = ref<PlayerState>('loading');
 let playbackWebPoToken: string | undefined;
 let coldStartToken: string | undefined;
 
+let startSilencePlayerInternal: () => Promise<void> | null;
+let stopSilencePlayerInternal: () => void | null;
+
+async function initSilencePlayer() {
+  if (startSilencePlayerInternal == null) {
+    let response = await fetch("/assets/5_seconds_of_silence.mp3");
+    let arrayBuffer = await response.arrayBuffer();
+    let audioCtx = new AudioContext();
+    let buffer = await audioCtx.decodeAudioData(arrayBuffer);
+    let source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    source.start(0);
+    let node = source.connect(audioCtx.destination);
+    audioCtx.suspend();
+    startSilencePlayerInternal = async function () {
+      if (audioCtx.state != "running") {
+        audioCtx.resume();
+      }
+    }
+    stopSilencePlayerInternal = function () {
+      if (audioCtx.state != "suspended") {
+        audioCtx.suspend()
+      }
+    }
+  }
+}
+
 export function useYoutubePlayer() {
   const route = useRoute();
   const getInnertube = useInnertube();
@@ -81,6 +109,8 @@ export function useYoutubePlayer() {
   const startTime = Math.floor(Date.now() / 1000);
   const clientPlaybackNonce = Utils.generateRandomString(12);
   const sessionId = Array.from(Array(16), () => Math.floor(Math.random() * 36).toString(36)).join('');
+
+  initSilencePlayer();
 
   function onPlayerStateChanged(state: any) {
     if (window && (window as any).onPlayerStateChanged != null) {
@@ -151,6 +181,11 @@ export function useYoutubePlayer() {
       console.log('startSilencePlayer');
       audio.play();
     }
+    await new Promise(r => setTimeout(r, 200));
+    if (audio.paused == false) {
+      startSilencePlayerInternal?.();
+      audio.pause();
+    }
   }
 
   function stopSilentcePlayer() {
@@ -163,6 +198,7 @@ export function useYoutubePlayer() {
       console.log('stopSilentcePlayer()');
       audio.pause()
     }
+    stopSilencePlayerInternal?.();
   }
 
   //#region --- Playback Position and Volume Management ---

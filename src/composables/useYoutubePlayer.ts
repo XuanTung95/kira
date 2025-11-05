@@ -71,18 +71,25 @@ async function initSilencePlayer() {
     let arrayBuffer = await response.arrayBuffer();
     let audioCtx = new AudioContext();
     let buffer = await audioCtx.decodeAudioData(arrayBuffer);
-    let source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-    source.start(0);
-    let node = source.connect(audioCtx.destination);
-    audioCtx.suspend();
+    let source: AudioBufferSourceNode | null = null;
     startSilencePlayerInternal = async function () {
+      if (source == null) {
+        source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.start();
+        source.connect(audioCtx.destination);
+      }
       if (audioCtx.state != "running") {
-        audioCtx.resume();
+        await audioCtx.resume();
       }
     }
     stopSilencePlayerInternal = function () {
+      if (source != null) {
+        source.stop();
+        source.disconnect();
+        source = null;
+      }
       if (audioCtx.state != "suspended") {
         audioCtx.suspend()
       }

@@ -184,12 +184,17 @@ export function useYoutubePlayer() {
       audio = document.getElementById("audioPlayer");
       playerComponents.value.audio = audio;
     }
-    if (audio != null && audio.paused != false) {
-      console.log('startSilencePlayer');
-      audio.play();
+    if (audio != null) {
+      if (audio.muted == true) {
+        audio.muted = false;
+      }
+      if (audio.paused != false) {
+        console.log('startSilencePlayer');
+        audio.play();
+      }
     }
     await new Promise(r => setTimeout(r, 200));
-    if (audio.paused == false) {
+    if (audio.paused == false && audio.muted == false) {
       startSilencePlayerInternal?.();
       audio.pause();
     }
@@ -201,9 +206,15 @@ export function useYoutubePlayer() {
       audio = document.getElementById("audioPlayer");
       playerComponents.value.audio = audio;
     }
-    if (audio != null && audio.paused != true) {
-      console.log('stopSilentcePlayer()');
-      audio.pause()
+    if (audio != null) {
+      if (audio.muted != true) {
+        console.log('stopSilentcePlayer()');
+        audio.muted = true;
+      }
+      let video = playerComponents.value.videoElement;
+      if (video != null && video.paused == true) {
+        audio.pause()
+      }
     }
     stopSilencePlayerInternal?.();
   }
@@ -959,9 +970,15 @@ export function useYoutubePlayer() {
         addToast('Unplayable video.', 'error');
         playerState.value = 'error';
         onPlayerStateChanged({
-          status: 'error',
+          status: 'videoNotAvailable',
           msg: 'Unplayable video.',
+          errorDescription: 'Unplayable video.',
         });
+        setTimeout(() => {
+          onPlayerStateChanged({
+            cmd: 'playNextCountdown',
+          });
+        }, 1500);
         return;
       }
 

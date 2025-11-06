@@ -433,6 +433,7 @@ export function useAppPlayerInterface() {
                 mWindow.onPlayerStateChanged = (state: any) => {
                     /// state.status: unloading/buffering/progress/ended
                     let status = state.status;
+                    let cmd = state.cmd;
                     let videoId = state.videoId;
                     if (status != 'progress') {
                         console.log(`onPlayerState ${status}`);
@@ -510,6 +511,11 @@ export function useAppPlayerInterface() {
                             status: status,
                             id: videoId,
                         });
+                    } else if (status == 'playerError' || status == 'videoNotAvailable') {
+                        state.cmd = 'statusChanged';
+                        sendMessageToApp(state);
+                    } else if (cmd != null) {
+                        sendMessageToApp(state);
                     } else {
                         state.cmd = 'debug';
                         sendMessageToApp(state);

@@ -31,6 +31,12 @@ function saveSettings() {
 
 loadSettings();
 
+export function setProxyForDesktop() {
+  if (settingsState.port == '5173') {
+    settingsState.port = '8080';
+  }
+}
+
 export function useProxySettings() {
   const isProxyConfigured = computed(() => !!settingsState.host);
 

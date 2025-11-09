@@ -64,6 +64,7 @@ let coldStartToken: string | undefined;
 
 let startSilencePlayerInternal: () => Promise<void> | null;
 let stopSilencePlayerInternal: () => void | null;
+let isShowingAds = false;
 
 async function initSilencePlayer() {
   if (startSilencePlayerInternal == null) {
@@ -179,6 +180,9 @@ export function useYoutubePlayer() {
   }
 
   async function startSilencePlayer() {
+    if (isShowingAds == true) {
+      return;
+    }
     var audio: any = playerComponents.value.audio;
     if (audio == null) {
       audio = document.getElementById("audioPlayer");
@@ -340,6 +344,7 @@ export function useYoutubePlayer() {
   function initMediaSession(videoInfo: ApiResponse) {
     if (navigator && 'mediaSession' in navigator) {
         navigator.mediaSession.setActionHandler('nexttrack', () => {
+          isShowingAds = false;
           if ((window as any)?.sendMessageToApp) {
             (window as any).sendMessageToApp({
                 cmd: 'nexttrack'
@@ -347,6 +352,7 @@ export function useYoutubePlayer() {
           }
         });
         navigator.mediaSession.setActionHandler('previoustrack', () => {
+            isShowingAds = false;
             if ((window as any)?.sendMessageToApp) {
             (window as any).sendMessageToApp({
                 cmd: 'previoustrack'
@@ -360,6 +366,7 @@ export function useYoutubePlayer() {
           }
         );
         navigator.mediaSession.setActionHandler('play', () => {
+            isShowingAds = false;
             controlPlayer('playOrPause', null)
           }
         );
@@ -917,6 +924,7 @@ export function useYoutubePlayer() {
   //#endregion
 
   async function loadVideo(videoId: string, targetContainer: HTMLElement) {
+    isShowingAds = false;
     if (!videoId) return;
 
     currentVideoId = videoId;
@@ -1022,11 +1030,17 @@ export function useYoutubePlayer() {
     if (cmd == 'pause') {
       playerComponents.value.videoElement?.pause();
     } else if (cmd == 'play') {
+      if (isShowingAds) {
+        return;
+      }
       playerComponents.value.videoElement?.play();
     } else if (cmd == 'playOrPause') {
       let video = playerComponents.value.videoElement;
       if (video != null) {
         if (video.paused) {
+          if (isShowingAds) {
+            return;
+          }
           video.play();
         } else {
           video.pause();
@@ -1063,6 +1077,21 @@ export function useYoutubePlayer() {
       let videoId = data.videoId;
       if (videoId != null) {
         preloadVideo(videoId, () => fetchVideoInfo(videoId));
+      }
+    } else if (cmd == 'showingAds') {
+      let showing = data.showing;
+      if (showing != null) {
+        let prev = isShowingAds;
+        isShowingAds = showing;
+        let video = playerComponents.value.videoElement;
+        if (video != null) {
+          if (showing == true) {
+            video.pause();
+            stopSilentcePlayer();
+          } else if (showing == false && prev == true) {
+            video.play();
+          }
+        }
       }
     }
   }

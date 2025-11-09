@@ -1,4 +1,5 @@
 import {fetchFunction } from '@/utils/helpers';
+import {setProxyForDesktop} from '@/composables/useProxySettings';
 
 let _requestId: number = 0;
 
@@ -289,6 +290,10 @@ export function useAppPlayerInterface() {
         if (window != null) {
             let mWindow = (window as any);
 
+            if (mWindow.flutter_inappwebview?.callHandler == null) {
+                setProxyForDesktop();
+            }
+
             function resumePlayerIfNeeded() {
                 let duration = Date.now() - (mWindow.appPlayer?.playHistory?.lastPause ?? 0);
                 console.log('resumePlayer duration', duration);
@@ -334,6 +339,9 @@ export function useAppPlayerInterface() {
                 },
                 preLoadVideo: (data: any) => {
                     return controlPlayer('preLoadVideo', data);
+                },
+                showingAds: (data: any) => {
+                    return controlPlayer('showingAds', data);
                 }
             }
 
@@ -385,6 +393,8 @@ export function useAppPlayerInterface() {
                     return controller.enablePip(data);
                 } else if (cmd == 'volume') {
                     return controller.volume(data);
+                } else if (cmd == 'showingAds') {
+                    return controller.showingAds(data);
                 }
             }
 

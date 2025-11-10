@@ -65,6 +65,7 @@ let coldStartToken: string | undefined;
 let startSilencePlayerInternal: () => Promise<void> | null;
 let stopSilencePlayerInternal: () => void | null;
 let isShowingAds = false;
+let textTrackVisibility = false;
 
 async function initSilencePlayer() {
   if (startSilencePlayerInternal == null) {
@@ -467,7 +468,9 @@ export function useYoutubePlayer() {
           }
           onPlayerStateChanged({status: newstate});
         } else if (eventName == 'trackschanged') {
-          player.setTextTrackVisibility(false);
+          if (textTrackVisibility != player.isTextTrackVisible()) {
+             player.setTextTrackVisibility(textTrackVisibility);
+          }
           onPlayerStateChanged({status: eventName});
         } else {
           onPlayerStateChanged({
@@ -504,7 +507,8 @@ export function useYoutubePlayer() {
           fuzzFactor: 0.5,
           timeout: 30 * 1000
         }
-      }
+      },
+      // textDisplayFactory: () => new shaka.text.UITextDisplayer(videoEl, shakaContainer),
     });
 
     videoEl.addEventListener('timeupdate', () => {
@@ -930,6 +934,7 @@ export function useYoutubePlayer() {
     currentVideoId = videoId;
     playerState.value = 'loading';
     playbackWebPoToken = undefined;
+    textTrackVisibility = false;
 
     try {
       startSilencePlayer();
@@ -1093,6 +1098,10 @@ export function useYoutubePlayer() {
           }
         }
       }
+    } else if (cmd == 'getTextTracks') {
+      return getTextTracks();
+    } else if (cmd == 'setTextTrack') {
+      return setTextTrack(data);
     }
   }
 
@@ -1203,6 +1212,45 @@ export function useYoutubePlayer() {
       }
     }
     return [];
+  }
+
+  function getTextTracks(): Array<any> {
+    const { player } = playerComponents.value;
+    if (player) {
+      let tracks = player.getTextTracks();
+      if (tracks) {
+        var ret: Array<any> = [];
+        for (const item of tracks) {
+          ret.push({
+            id: item.id,
+            language: item.language,
+            text: item.label,
+            selected: item.active
+          });
+        }
+        return ret;
+      }
+    }
+    return [];
+  }
+
+  function setTextTrack(data: any) {
+    const { player } = playerComponents.value;
+    if (player) {
+      let language = data?.language;
+      let text = data?.text;
+      let show = data?.show;
+      if (language != null && text != null) {
+        let target = player.getTextTracks().find(u => u.language == language && u.label == text);
+        if (target != null) {
+          textTrackVisibility = show ?? textTrackVisibility;
+          player.selectTextTrack(target);    
+        } else {
+          textTrackVisibility = false;
+        }
+      }
+      player.setTextTrackVisibility(textTrackVisibility);
+    }
   }
 
   return {

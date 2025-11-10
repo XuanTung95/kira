@@ -322,6 +322,12 @@ export function useAppPlayerInterface() {
                 getTracks: () => {
                     return controlPlayer('getTracks', null);
                 },
+                getTextTracks: () => {
+                    return controlPlayer('getTextTracks', null);
+                },
+                setTextTrack: (data: any) => {
+                    return controlPlayer('setTextTrack', data);
+                },
                 selectTrack: (data: any) => {
                     return controlPlayer('selectTrack', data);
                 },
@@ -395,6 +401,8 @@ export function useAppPlayerInterface() {
                     return controller.volume(data);
                 } else if (cmd == 'showingAds') {
                     return controller.showingAds(data);
+                } else if (cmd == 'setTextTrack') {
+                    return controller.setTextTrack(data);
                 }
             }
 
@@ -502,19 +510,37 @@ export function useAppPlayerInterface() {
                                 language: mWindow.playerSetting.language,
                             });
                         }
+                        let textTracks = controller.getTextTracks();
                         sendMessageToApp({
                             cmd: 'getTracks',
                             tracks: tracks,
+                            textTracks: textTracks,
                             id: videoId,
                         });
                     } else if (status == 'updateVideoInfo') {
                         let data = state.data;
                         console.log('updateVideoInfo', state);
+                        /*
+                        let videoDetails = data.videoDetails;
+                        let captionTracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+                        let streamInfo = {
+                            id: videoDetails?.videoId,
+                            name: videoDetails?.title,
+                            description: {content: videoDetails?.shortDescription},
+                            closeCaptionTrack: captionTracks?.map((e: any) => {
+                                return {
+                                    baseUrl: e.baseUrl,
+                                    languageCode: e.languageCode,
+                                    text: e.name?.simpleText ?? e.languageCode
+                                }
+                            }),
+                        };
                         sendMessageToApp({
                             cmd: 'updateVideoInfo',
-                            streamInfo: data,
+                            streamInfo: streamInfo,
                             id: videoId,
                         });
+                        */
                     } else if (status == 'enterPIP' || status == 'exitPIP') {
                         sendMessageToApp({
                             cmd: 'statusChanged',

@@ -66,6 +66,7 @@ let startSilencePlayerInternal: () => Promise<void> | null;
 let stopSilencePlayerInternal: () => void | null;
 let isShowingAds = false;
 let textTrackVisibility = false;
+let pipBusy = false;
 
 async function initSilencePlayer() {
   if (startSilencePlayerInternal == null) {
@@ -1106,8 +1107,16 @@ export function useYoutubePlayer() {
   }
 
   function enablePip() {
+    if (pipBusy) {
+      return;
+    }
+    const { videoElement } = playerComponents.value;
+    let currTime = videoElement?.currentTime;
+    if (currTime == null || currTime == Infinity || currTime <= 0) {
+      return;
+    }
     try {
-      const { videoElement } = playerComponents.value;
+      pipBusy = true;
       if (videoElement != null) {
         if (document && document.pictureInPictureElement) {
           document.exitPictureInPicture();
@@ -1117,6 +1126,8 @@ export function useYoutubePlayer() {
       }
     } catch (error) {
       console.log('Picture-in-Picture:', error);
+    } finally {
+      pipBusy = false;
     }
   }
 

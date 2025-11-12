@@ -390,6 +390,11 @@ export function useAppPlayerInterface() {
                     if (data.language != null && mWindow.playerSetting != null) {
                         mWindow.playerSetting.language = data.language;
                     }
+                    if (mWindow.isAndroid == true) {
+                        setTimeout(() => {
+                            mWindow.onPlayerStateChanged({status: 'trackschanged'});
+                        }, 500);
+                    }
                     return controller.selectTrack(data);
                 } else if (cmd == 'selectSpeed') {
                     return controller.selectSpeed(data);

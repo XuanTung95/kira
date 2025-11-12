@@ -329,6 +329,11 @@ export function useAppPlayerInterface() {
                     return controlPlayer('setTextTrack', data);
                 },
                 selectTrack: (data: any) => {
+                    if (mWindow.isAndroid == true) {
+                        setTimeout(() => {
+                            mWindow.onPlayerStateChanged({status: 'trackschanged'});
+                        }, 500);
+                    }
                     return controlPlayer('selectTrack', data);
                 },
                 selectSpeed: (data: any) => {
@@ -389,11 +394,6 @@ export function useAppPlayerInterface() {
                 } else if (cmd == 'selectTrack') {
                     if (data.language != null && mWindow.playerSetting != null) {
                         mWindow.playerSetting.language = data.language;
-                    }
-                    if (mWindow.isAndroid == true) {
-                        setTimeout(() => {
-                            mWindow.onPlayerStateChanged({status: 'trackschanged'});
-                        }, 500);
                     }
                     return controller.selectTrack(data);
                 } else if (cmd == 'selectSpeed') {

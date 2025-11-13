@@ -357,7 +357,7 @@ export function useAppPlayerInterface() {
             }
 
             mWindow.handleAppCmd = (data: any) => {
-                console.log('handleAppCmd', data);
+                console.log(`handleAppCmd ${JSON.stringify(data)}`);
                 let cmd = data.cmd;
                 if (cmd == 'appLifecycleState') {
                     let state = data.state;

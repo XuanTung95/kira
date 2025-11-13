@@ -153,7 +153,7 @@ export function useYoutubePlayer() {
             playbackRate: rate,
             position: currentTime
           };
-          console.log('update session pos', state)
+          console.log('update session pos ', JSON.stringify(state))
           navigator.mediaSession.setPositionState(state);
           navigator.mediaSession.playbackState = videoElement.paused ? "paused" : "playing";
         }
@@ -454,7 +454,7 @@ export function useYoutubePlayer() {
     ];
     allEvents.forEach((eventName) => {
       player.addEventListener(eventName, (_event: any) => {
-        console.log('shaka event ' + eventName, _event);
+        console.log('shaka event ' + eventName, JSON.stringify(_event));
         if (eventName == 'statechanged') {
           let newstate = _event.newstate;
           if (newstate == 'playing') {

@@ -199,14 +199,18 @@ export function useYoutubePlayer() {
         audio.play();
       }
     }
+    /*
     await new Promise(r => setTimeout(r, 200));
     if (audio.paused == false && audio.muted == false) {
-      startSilencePlayerInternal?.();
-      audio.pause();
+      if (startSilencePlayerInternal != null) {
+        startSilencePlayerInternal?.();
+        audio.pause();
+      }
     }
+    */
   }
 
-  function stopSilentcePlayer() {
+  function stopSilencePlayer() {
     var audio : any = playerComponents.value.audio;
     if (audio == null) {
       audio = document.getElementById("audioPlayer");
@@ -214,7 +218,7 @@ export function useYoutubePlayer() {
     }
     if (audio != null) {
       if (audio.muted != true) {
-        console.log('stopSilentcePlayer()');
+        console.log('stopSilencePlayer');
         audio.muted = true;
       }
       let video = playerComponents.value.videoElement;
@@ -222,7 +226,7 @@ export function useYoutubePlayer() {
         audio.pause()
       }
     }
-    stopSilencePlayerInternal?.();
+    // stopSilencePlayerInternal?.();
   }
 
   //#region --- Playback Position and Volume Management ---
@@ -454,11 +458,11 @@ export function useYoutubePlayer() {
     ];
     allEvents.forEach((eventName) => {
       player.addEventListener(eventName, (_event: any) => {
-        console.log('shaka event ' + eventName, JSON.stringify(_event));
+        console.log('shaka event ' + eventName, _event);
         if (eventName == 'statechanged') {
           let newstate = _event.newstate;
           if (newstate == 'playing') {
-            stopSilentcePlayer();
+            stopSilencePlayer();
             updateMediaSessionPosition();
           } else if (newstate == 'ended' || newstate == 'paused'
              || newstate == 'buffering' || newstate == 'unload') {
@@ -521,7 +525,7 @@ export function useYoutubePlayer() {
         duration,
         player,
       });
-      stopSilentcePlayer();
+      stopSilencePlayer();
     });
 
     videoEl.addEventListener('enterpictureinpicture', (_e) => {
@@ -1068,7 +1072,7 @@ export function useYoutubePlayer() {
     } else if (cmd == 'startSilencePlayer') {
       startSilencePlayer();
     } else if (cmd == 'stopSilentcePlayer') {
-      stopSilentcePlayer();
+      stopSilencePlayer();
     } else if (cmd == 'getTracks') {
       return getTracks();
     } else if (cmd == 'selectTrack') {
@@ -1093,7 +1097,7 @@ export function useYoutubePlayer() {
         if (video != null) {
           if (showing == true) {
             video.pause();
-            stopSilentcePlayer();
+            stopSilencePlayer();
           } else if (showing == false && prev == true) {
             video.play();
           }

@@ -236,13 +236,13 @@
   <div class="watch-page">
     <div class="primary">
       <VideoPlayer class="ytplayer" :videoId/>
-      <audio id="audioPlayer" src="/assets/5_seconds_of_silence.mp3" loop></audio>
+      <audio id="audioPlayer" src="/assets/5_seconds_of_silence.mp3" loop preload="auto" autoplay></audio>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import VideoPlayer from '@/components/VideoPlayer.vue';
@@ -260,5 +260,18 @@ watch(() => route.params.id, (newId) => {
   relatedVideos.value = [];
   videoDetails.value = undefined;
   document.title = 'Player';
+});
+
+onMounted(async () => {
+  /// start audio immediatly
+  let audio: any = document.getElementById("audioPlayer");
+  if (audio != null) {
+    if (audio.muted == true) {
+      audio.muted = false;
+    }
+    if (audio.paused != false) {
+      audio.play();
+    }
+  }
 });
 </script>

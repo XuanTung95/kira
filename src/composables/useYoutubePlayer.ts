@@ -68,6 +68,7 @@ let isShowingAds = false;
 let textTrackVisibility = false;
 let pipBusy = false;
 let keepSilenceSound = false;
+let needSyncPos = false;
 
 async function initSilencePlayer() {
   if (startSilencePlayerInternal == null) {
@@ -147,16 +148,17 @@ export function useYoutubePlayer() {
               }
           }
         }
-        let rate = videoElement.playbackRate;
         if (currentTime != null && currentTime != Infinity && duration != null && duration != Infinity) {
+          if (needSyncPos) {
+            duration = duration + 0.5;
+            needSyncPos = false;
+          }
           let state = {
             duration: duration,
-            playbackRate: rate,
             position: currentTime
           };
           console.log('update session pos ', JSON.stringify(state))
           navigator.mediaSession.setPositionState(state);
-          navigator.mediaSession.playbackState = videoElement.paused ? "paused" : "playing";
         }
       }
     }
@@ -201,6 +203,9 @@ export function useYoutubePlayer() {
       if (audio.muted == true) {
         audio.muted = false;
       }
+      if (audio.playbackRate != 1) {
+        audio.playbackRate = 1;
+      }
       if (audio.paused == true) {
         console.log('startSilencePlayer');
         audio.play();
@@ -222,6 +227,10 @@ export function useYoutubePlayer() {
     if (audio != null) {
       if (audio.muted != true) {
         audio.muted = true;
+        needSyncPos = true;
+      }
+      if (audio.playbackRate != 0) {
+        audio.playbackRate = 0;
       }
       /*
       if (audio.muted != true) {
@@ -391,6 +400,12 @@ export function useYoutubePlayer() {
             controlPlayer('playOrPause', null)
           }
         );
+        navigator.mediaSession.setActionHandler('stop', () => {
+            keepSilenceSound = true;
+            startSilencePlayer();
+            controlPlayer('playOrPause', null)
+          }
+        );
         let videoDetails = videoInfo?.data?.videoDetails;
         let thumbnails = videoDetails?.thumbnail?.thumbnails;
         if (thumbnails instanceof Array) {
@@ -476,15 +491,25 @@ export function useYoutubePlayer() {
             // stopSilencePlayer();
             keepSilenceSound = false;
             updateMediaSessionPosition();
+            if (videoEl.playbackRate == 0) {
+              console.log('shaka event playing + playbackRate == 0');
+              playInternal();
+            } else {
+              console.log('shaka event playing + playbackRate', videoEl.playbackRate);
+            }
           } else if (newstate == 'ended' || newstate == 'paused'
              || newstate == 'buffering' || newstate == 'unload') {
             keepSilenceSound = true;
             startSilencePlayer();
           }
           if (newstate == "buffering") {
+             console.log('shaka event buffering + playbackRate', videoEl.playbackRate);
              enableAutoArbIfNeeded();
           }
           onPlayerStateChanged({status: newstate});
+        } else if (eventName == "buffering") {
+          console.log('shaka event buffering + playbackRate', videoEl.playbackRate);
+          enableAutoArbIfNeeded();
         } else if (eventName == 'trackschanged') {
           if (textTrackVisibility != player.isTextTrackVisible()) {
              player.setTextTrackVisibility(textTrackVisibility);
@@ -540,6 +565,9 @@ export function useYoutubePlayer() {
       });
       if (!keepSilenceSound) {
         stopSilencePlayer();
+      }
+      if (needSyncPos) {
+        updateMediaSessionPosition();
       }
     });
 
@@ -1056,12 +1084,15 @@ export function useYoutubePlayer() {
   function playInternal() {
     let videoEl = playerComponents.value.videoElement;
     if (videoEl) {
+      console.log('playInternal', videoEl.playbackRate, lastPlaybackRate);
       if (videoEl.playbackRate < 1) {
         if (lastPlaybackRate >= 1) {
           videoEl.playbackRate = lastPlaybackRate;
         } else {
           videoEl.playbackRate = 1;
         }
+        videoEl.pause();
+        videoEl.play();
         onPlayerStateChanged({status: 'playing'});
       }
       if (videoEl.paused == true) {

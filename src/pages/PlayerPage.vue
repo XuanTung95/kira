@@ -236,7 +236,7 @@
   <div class="watch-page">
     <div class="primary">
       <VideoPlayer class="ytplayer" :videoId/>
-      <audio id="audioPlayer" src="/assets/5_seconds_of_silence.mp3" loop preload="auto" autoplay></audio>
+      <audio id="audioPlayer" src="/assets/5_seconds_of_silence.mp3" loop preload="auto"></audio>
     </div>
   </div>
 </template>
@@ -264,6 +264,7 @@ watch(() => route.params.id, (newId) => {
 
 onMounted(async () => {
   /// start audio immediatly
+  /*
   let audio: any = document.getElementById("audioPlayer");
   if (audio != null) {
     if (audio.muted == true) {
@@ -273,5 +274,6 @@ onMounted(async () => {
       audio.play();
     }
   }
+  */
 });
 </script>

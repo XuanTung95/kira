@@ -67,6 +67,7 @@ let stopSilencePlayerInternal: () => void | null;
 let isShowingAds = false;
 let textTrackVisibility = false;
 let pipBusy = false;
+let keepSilenceSound = false;
 
 async function initSilencePlayer() {
   if (startSilencePlayerInternal == null) {
@@ -120,7 +121,7 @@ export function useYoutubePlayer() {
   const clientPlaybackNonce = Utils.generateRandomString(12);
   const sessionId = Array.from(Array(16), () => Math.floor(Math.random() * 36).toString(36)).join('');
 
-  initSilencePlayer();
+  // initSilencePlayer();
 
   function onPlayerStateChanged(state: any) {
     if (window && (window as any).onPlayerStateChanged != null) {
@@ -181,20 +182,26 @@ export function useYoutubePlayer() {
     }
   }
 
+  function reloadPlaybackPosition() {
+    const {videoElement} : any = playerComponents.value;
+    if (videoElement != null) {
+      let curr = videoElement.currentTime;
+      if (curr != null && curr != Infinity) {
+        videoElement.currentTime = curr;
+      }
+    }
+  }
+
   async function startSilencePlayer() {
     if (isShowingAds == true) {
       return;
     }
-    var audio: any = playerComponents.value.audio;
-    if (audio == null) {
-      audio = document.getElementById("audioPlayer");
-      playerComponents.value.audio = audio;
-    }
+    var audio: any = document.getElementById("audioPlayer");
     if (audio != null) {
       if (audio.muted == true) {
         audio.muted = false;
       }
-      if (audio.paused != false) {
+      if (audio.paused == true) {
         console.log('startSilencePlayer');
         audio.play();
       }
@@ -211,12 +218,12 @@ export function useYoutubePlayer() {
   }
 
   function stopSilencePlayer() {
-    var audio : any = playerComponents.value.audio;
-    if (audio == null) {
-      audio = document.getElementById("audioPlayer");
-      playerComponents.value.audio = audio;
-    }
+    var audio: any = document.getElementById("audioPlayer");
     if (audio != null) {
+      if (audio.muted != true) {
+        audio.muted = true;
+      }
+      /*
       if (audio.muted != true) {
         console.log('stopSilencePlayer');
         audio.muted = true;
@@ -225,6 +232,7 @@ export function useYoutubePlayer() {
       if (video != null && video.paused == true) {
         audio.pause()
       }
+      */
     }
     // stopSilencePlayerInternal?.();
   }
@@ -372,11 +380,14 @@ export function useYoutubePlayer() {
           }
         );
         navigator.mediaSession.setActionHandler('play', () => {
+            keepSilenceSound = false;
             isShowingAds = false;
-            controlPlayer('playOrPause', null)
+            controlPlayer('playOrPause', null);
           }
         );
         navigator.mediaSession.setActionHandler('pause', () => {
+            keepSilenceSound = true;
+            startSilencePlayer();
             controlPlayer('playOrPause', null)
           }
         );
@@ -462,10 +473,12 @@ export function useYoutubePlayer() {
         if (eventName == 'statechanged') {
           let newstate = _event.newstate;
           if (newstate == 'playing') {
-            stopSilencePlayer();
+            // stopSilencePlayer();
+            keepSilenceSound = false;
             updateMediaSessionPosition();
           } else if (newstate == 'ended' || newstate == 'paused'
              || newstate == 'buffering' || newstate == 'unload') {
+            keepSilenceSound = true;
             startSilencePlayer();
           }
           if (newstate == "buffering") {
@@ -525,7 +538,9 @@ export function useYoutubePlayer() {
         duration,
         player,
       });
-      stopSilencePlayer();
+      if (!keepSilenceSound) {
+        stopSilencePlayer();
+      }
     });
 
     videoEl.addEventListener('enterpictureinpicture', (_e) => {
@@ -1036,24 +1051,54 @@ export function useYoutubePlayer() {
     await cleanupPreviousVideo();
   });
 
+  let lastPlaybackRate = 1;
+
+  function playInternal() {
+    let videoEl = playerComponents.value.videoElement;
+    if (videoEl) {
+      if (videoEl.playbackRate < 1) {
+        if (lastPlaybackRate >= 1) {
+          videoEl.playbackRate = lastPlaybackRate;
+        } else {
+          videoEl.playbackRate = 1;
+        }
+        onPlayerStateChanged({status: 'playing'});
+      }
+      if (videoEl.paused == true) {
+        videoEl.play();
+      }
+    }
+  }
+
+  function pauseInternal() {
+    let videoEl = playerComponents.value.videoElement;
+    if (videoEl) {
+      if (videoEl.playbackRate > 0) {
+        lastPlaybackRate = videoEl.playbackRate;
+        videoEl.playbackRate = 0;
+      }
+      onPlayerStateChanged({status: 'paused'});
+    }
+  }
+  
   function controlPlayer(cmd: string, data: any) {
     if (cmd == 'pause') {
-      playerComponents.value.videoElement?.pause();
+      pauseInternal();
     } else if (cmd == 'play') {
       if (isShowingAds) {
         return;
       }
-      playerComponents.value.videoElement?.play();
+      playInternal();
     } else if (cmd == 'playOrPause') {
       let video = playerComponents.value.videoElement;
       if (video != null) {
-        if (video.paused) {
+        if (video.paused == true || video.playbackRate == 0) {
           if (isShowingAds) {
             return;
           }
-          video.play();
+          playInternal();
         } else {
-          video.pause();
+          pauseInternal();
         }
       }
     } else if (cmd == 'volume') {
@@ -1071,7 +1116,7 @@ export function useYoutubePlayer() {
       }
     } else if (cmd == 'startSilencePlayer') {
       startSilencePlayer();
-    } else if (cmd == 'stopSilentcePlayer') {
+    } else if (cmd == 'stopSilencePlayer') {
       stopSilencePlayer();
     } else if (cmd == 'getTracks') {
       return getTracks();

@@ -319,6 +319,9 @@ export function useAppPlayerInterface() {
                 startSilencePlayer: () => {
                     controlPlayer('startSilencePlayer', null);
                 },
+                stopSilencePlayer: () => {
+                    controlPlayer('stopSilencePlayer', null);
+                },
                 getTracks: () => {
                     return controlPlayer('getTracks', null);
                 },
@@ -368,6 +371,12 @@ export function useAppPlayerInterface() {
                         if (state == 'paused') {
                             resumePlayerIfNeeded();
                         } else if (state == 'resumed') {
+                            let audio: any = document.getElementById("audioPlayer");
+                            if (audio != null) {
+                                if (audio.paused != true) {
+                                    audio.pause();
+                                }
+                            }
                             resumePlayerIfNeeded();
                         }
                     }

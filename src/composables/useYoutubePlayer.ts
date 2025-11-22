@@ -806,8 +806,15 @@ export function useYoutubePlayer() {
     if (reloadPlaybackContext) {
       requestParams.playbackContext.reloadPlaybackContext = reloadPlaybackContext;
     }
-    return await innertube.actions.execute('/player', { ...requestParams, parse: false });
-    
+    let ret = await innertube.actions.execute('/player', { ...requestParams, parse: false });
+    let adaptiveFormats = ret?.data?.streamingData?.adaptiveFormats;
+    if (adaptiveFormats) {
+      /// bỏ audio có isVb == true;
+      ret.data!.streamingData!.adaptiveFormats = adaptiveFormats.filter((item) => {
+        return item.isVb !== true;
+      });
+    }
+    return ret;
     try {
       return await makePlayerRequest({
         clientConfig,

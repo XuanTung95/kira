@@ -13,6 +13,8 @@ let nextId = 0;
 export function useToastStore() {
   const addToast = (message: string, type: 'error' | 'info' = 'info', duration = 3000) => {
     const id = nextId++;
+    /// replace Shaka = ''
+    message = message.replace(/Shaka/gi, "");
     toasts.value.push({ id, message, type, duration });
     return id;
   };

@@ -17,7 +17,7 @@ export const router = createRouter({
       component: WatchPage
     },
     {
-      path: '/player/:id',
+      path: '/player/:id?',
       component: PlayerPage
     },
     {

@@ -54,35 +54,20 @@
 
 <template>
   <div class="video-player-container">
-    <div ref="playerHostElement" class="player-host"/>
+    <div id="playerHostElement" class="player-host"/>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
-import { useYoutubePlayer } from '@/composables/useYoutubePlayer';
-import { useAppPlayerInterface } from '@/composables/app_player_interface';
 
 const { videoId } = defineProps<{ videoId: string; }>();
 
-const playerHostElement = ref<HTMLElement | null>(null);
+// const playerHostElement = ref<HTMLElement | null>(null);
 
-const {playerComponents, ui, playerState, loadVideo, controlPlayer} = useYoutubePlayer();
+// watch(() => videoId, (newId) => loadVideo(newId));
 
-async function load(id: string) {
-  if (!playerHostElement.value) return;
-  await loadVideo(id, playerHostElement.value);
-}
-
-watch(() => videoId, (newId) => load(newId));
-onMounted(async () => {
-  const {initInterface} = useAppPlayerInterface();
-  load(videoId);
-  initInterface({
-    load: load,
-    playerComponents: playerComponents,
-    controlPlayer: controlPlayer,
-    initVideoId: videoId,
-  });
-});
+// onMounted(async () => {
+//   loadVideo(videoId);
+// });
 </script>

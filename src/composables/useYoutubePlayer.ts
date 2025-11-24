@@ -982,7 +982,11 @@ export function useYoutubePlayer() {
   }
   //#endregion
 
-  async function loadVideo(videoId: string, targetContainer: HTMLElement) {
+  async function loadVideo(videoId: string) {
+    let targetContainer = document.getElementById('playerHostElement');
+    if (targetContainer == null) {
+      return;
+    }
     isShowingAds = false;
     if (!videoId) return;
 

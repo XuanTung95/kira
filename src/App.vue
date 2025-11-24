@@ -334,9 +334,9 @@ body {
 
 <template>
   <div class="app">
-    <div class="main-content">
+    <MainContent>
       <router-view/>
-    </div>
+    </MainContent>
     <ToastNotification/>
     <!--
     <SettingsDialog
@@ -348,7 +348,7 @@ body {
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 import { onMounted, provide, ref, shallowRef } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -367,7 +367,9 @@ import { useToastStore } from '@/stores/toastStore';
 import { Innertube, Platform, UniversalCache, YTNodes, Types } from 'youtubei.js/web';
 import { base64ToU8 } from 'googlevideo/utils';
 import { botguardService } from '@/services/botguard';
-import {useAppPlayerInit, initWebMessage} from '@/composables/app_player_interface';
+import {useAppPlayerInit} from '@/composables/app_player_interface';
+
+import MainContent from './components/MainContent.vue';
 
 import {
   CLIENT_CONFIG_STORAGE_KEY,
@@ -613,7 +615,6 @@ innertubePromise = initInnertube();
 clientConfigPromise = fetchOnesieHotConfig();
 
 onMounted(async () => {
-  initWebMessage();
   const isExtensionInstalled = checkExtension();
 
   if (!isProxyConfigured.value && !isExtensionInstalled) {

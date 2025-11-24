@@ -354,6 +354,9 @@ export function useAppPlayerInterface() {
                 preLoadVideo: (data: any) => {
                     return controlPlayer('preLoadVideo', data);
                 },
+                setOffScreen: (data: any) => {
+                    return controlPlayer('setOffScreen', data);
+                },
                 showingAds: (data: any) => {
                     return controlPlayer('showingAds', data);
                 }
@@ -417,6 +420,8 @@ export function useAppPlayerInterface() {
                     return controller.showingAds(data);
                 } else if (cmd == 'setTextTrack') {
                     return controller.setTextTrack(data);
+                } else if (cmd == 'setOffScreen') {
+                    return controller.setOffScreen(data);
                 }
             }
 

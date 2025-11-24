@@ -69,6 +69,7 @@ let textTrackVisibility = false;
 let pipBusy = false;
 let keepSilenceSound = false;
 let needSyncPos = false;
+let isOffScreen = false;
 
 async function initSilencePlayer() {
   if (startSilencePlayerInternal == null) {
@@ -195,7 +196,7 @@ export function useYoutubePlayer() {
   }
 
   async function startSilencePlayer() {
-    if (isShowingAds == true) {
+    if (isShowingAds == true || isOffScreen) {
       return;
     }
     var audio: any = document.getElementById("audioPlayer");
@@ -225,6 +226,10 @@ export function useYoutubePlayer() {
   function stopSilencePlayer() {
     var audio: any = document.getElementById("audioPlayer");
     if (audio != null) {
+      if (isOffScreen) {
+        audio.pause();
+        return;
+      }
       if (audio.muted != true) {
         audio.muted = true;
         needSyncPos = true;
@@ -990,6 +995,10 @@ export function useYoutubePlayer() {
     isShowingAds = false;
     if (!videoId) return;
 
+    if (isOffScreen) {
+      setOffScreenInternal(false);
+    }
+
     currentVideoId = videoId;
     playerState.value = 'loading';
     playbackWebPoToken = undefined;
@@ -1194,6 +1203,8 @@ export function useYoutubePlayer() {
       return getTextTracks();
     } else if (cmd == 'setTextTrack') {
       return setTextTrack(data);
+    } else if (cmd == 'setOffScreen') {
+      setOffScreen(data);
     }
   }
 
@@ -1352,6 +1363,25 @@ export function useYoutubePlayer() {
         }
       }
       player.setTextTrackVisibility(textTrackVisibility);
+    }
+  }
+
+  function setOffScreen(data: any) {
+    if (data.offScreen != null) {
+      let offscreen = data.offScreen;
+      setOffScreenInternal(offscreen);
+    }
+  }
+  
+  function setOffScreenInternal(offScreen: boolean) {
+    isOffScreen = offScreen;
+    if (offScreen) {
+      stopSilencePlayer();
+      cleanupPreviousVideo();
+      const {videoEl} : any = playerComponents.value;
+      if (videoEl != null) {
+        videoEl.pause();
+      }
     }
   }
 

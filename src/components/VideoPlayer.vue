@@ -60,6 +60,8 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+const route = useRoute();
 
 const { videoId } = defineProps<{ videoId: string; }>();
 
@@ -67,7 +69,13 @@ const { videoId } = defineProps<{ videoId: string; }>();
 
 // watch(() => videoId, (newId) => loadVideo(newId));
 
-// onMounted(async () => {
-//   loadVideo(videoId);
-// });
+onMounted(async () => {
+  if (route.params.id) {
+    let id = route.params.id;
+    let mWindow = (window as any);
+    if (mWindow && mWindow.appPlayer?.loadVideo) {
+      mWindow.appPlayer.loadVideo(id, null, null)
+    }
+  }
+});
 </script>

@@ -1,9 +1,9 @@
 
 function checkSupport(type: string | null, data: any) {
-    if (type == null) {
-        return true;
+    if (type == null || data == null) {
+        return false;
     }
-    return true;
+    return false;
 }
 
 async function extract(type: string, data: any) {

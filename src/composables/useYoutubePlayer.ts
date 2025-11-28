@@ -988,6 +988,7 @@ export function useYoutubePlayer() {
   //#endregion
 
   async function loadVideo(videoId: string) {
+    console.log('loadVideo', videoId);
     let targetContainer = document.getElementById('playerHostElement');
     if (targetContainer == null) {
       return;

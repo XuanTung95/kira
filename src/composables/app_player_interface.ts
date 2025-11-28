@@ -358,9 +358,19 @@ export function useAppPlayerInterface() {
                 setOffScreen: (data: any) => {
                     let offscreen = data.offScreen;
                     let videoId = data.videoId;
+                    let height = data.height;
+                    let language = data.language;
                     if (offscreen === true) {
                         router.replace(`/offScreen`);
                     } else if (offscreen === false) {
+                        if (mWindow.playerSetting) {
+                            if (height != null) {
+                                mWindow.playerSetting.defaultHeight = height;
+                            }
+                            if (language != null) {
+                                mWindow.playerSetting.language = height;
+                            }
+                        }
                         router.replace(`/player/${videoId}`);
                     }
                     // return controlPlayer('setOffScreen', data);

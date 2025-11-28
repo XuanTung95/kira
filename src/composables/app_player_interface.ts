@@ -1,5 +1,6 @@
 import {fetchFunction } from '@/utils/helpers';
 import {setProxyForDesktop} from '@/composables/useProxySettings';
+import { router } from '../router'
 
 let _requestId: number = 0;
 
@@ -355,7 +356,14 @@ export function useAppPlayerInterface() {
                     return controlPlayer('preLoadVideo', data);
                 },
                 setOffScreen: (data: any) => {
-                    return controlPlayer('setOffScreen', data);
+                    let offscreen = data.offScreen;
+                    let videoId = data.videoId;
+                    if (offscreen === true) {
+                        router.replace(`/offScreen`);
+                    } else if (offscreen === false) {
+                        router.replace(`/player/${videoId}`);
+                    }
+                    // return controlPlayer('setOffScreen', data);
                 },
                 showingAds: (data: any) => {
                     return controlPlayer('showingAds', data);

@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage.vue';
 import WatchPage from './pages/WatchPage.vue';
 import PlayerPage from './pages/PlayerPage.vue';
 import ReelsPage from './pages/ReelsPage.vue';
+import OffScreenPage from './pages/OffScreenPage.vue';
 
 export const router = createRouter({
   // history: createWebHistory(),
@@ -23,6 +24,10 @@ export const router = createRouter({
     {
       path: '/reels',
       component: ReelsPage
+    },
+    {
+      path: '/offScreen',
+      component: OffScreenPage
     },
   ]
 });

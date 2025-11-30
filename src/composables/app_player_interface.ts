@@ -145,29 +145,29 @@ async function proxyFetch(input: string | Request | URL, init?: RequestInit): Pr
                     body = base64ToArrayBuffer(body);
                 }
             }
-                let finalBody = body;
-                if (bodyType == 'webMessage') {
-                    let promise = promiseMap.get(requestId);
-                    if (promise != null) {
-                        let data = await promise.promise;
-                        finalBody = data;
-                    }
+            let finalBody = body;
+            if (bodyType == 'webMessage') {
+                let promise = promiseMap.get(requestId);
+                if (promise != null) {
+                    let data = await promise.promise;
+                    finalBody = data;
                 }
-                let response = new Response(finalBody, {
-                    status: status,
-                    headers: headers,
-                    statusText: res.statusText ?? 'OK',
-                });
-                promiseMap.delete(requestId);
-                /*
-                Object.defineProperties(response, {
-                    ok: { value: status >= 200 && status < 300 },
-                    redirected: { value: false },
-                    type: { value: 'cors' },
-                    url: { value: res.url ?? '' },
-                });
-                */
-                return response;
+            }
+            let response = new Response(finalBody, {
+                status: status,
+                headers: headers,
+                statusText: res.statusText ?? 'OK',
+            });
+            promiseMap.delete(requestId);
+            /*
+            Object.defineProperties(response, {
+                ok: { value: status >= 200 && status < 300 },
+                redirected: { value: false },
+                type: { value: 'cors' },
+                url: { value: res.url ?? '' },
+            });
+            */
+            return response;
         }
     } catch (e) {
         console.log('app proxy error', e);
@@ -178,6 +178,86 @@ async function proxyFetch(input: string | Request | URL, init?: RequestInit): Pr
     } else {
         return fetchFunction(input, init, true);
     }
+}
+
+export async function getJsonResponse(method: string, url: string, body: any , headers: any): Promise<any> {
+    let res = await getRawResponse(method, url, body, headers);
+    let resBody = res?.body;
+    if (typeof resBody == "string" && resBody) {
+        res!.body = JSON.parse(resBody);
+    }
+    return res;
+}
+
+export async function getRawResponse(method: string, url: string, body: any , headers: any): Promise<any> {
+    if (window == null || !(window as any).flutter_inappwebview?.callHandler) {
+        return null;
+    }
+    let requestId = getNewRequestId();
+
+    let bodyBase64 = null;
+    if (body && body instanceof ArrayBuffer) {
+        let binary = '';
+        const bytes = new Uint8Array(body);
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode(...chunk);
+        }
+        bodyBase64 = btoa(binary);
+    } else if (body && typeof body !== 'string') {
+        let raw: string;
+        if (body instanceof Blob) {
+            raw = await body.text();
+        } else if (body instanceof FormData) {
+            const obj: Record<string, any> = {};
+            body.forEach((v, k) => (obj[k] = v));
+            raw = JSON.stringify(obj);
+        } else {
+            raw = JSON.stringify(body);
+        }
+        body = raw;
+    }
+
+    let cmd = 'proxy';
+    const req = { id: requestId, cmd, url, method, headers, body: bodyBase64 == null ? body : null, bodyBase64 };
+    try {
+        createPromise(requestId);
+        const res = await (window as any).flutter_inappwebview.callHandler(
+            'sendToApp',
+            req,
+        );
+        if (res != null) {
+            let id = res.id;
+            let status = res.status;
+            let body = res.body;
+            let bodyType = res.bodyType;
+            let headers = res.headers;
+            if (bodyType == 'base64') {
+                if (body != null) {
+                    body = base64ToArrayBuffer(body);
+                }
+            }
+            let finalBody = body;
+            if (bodyType == 'webMessage') {
+                let promise = promiseMap.get(requestId);
+                if (promise != null) {
+                    let data = await promise.promise;
+                    finalBody = data;
+                }
+            }
+            promiseMap.delete(requestId);
+            return {
+                body: finalBody,
+                status: status,
+                headers: headers,
+                statusText: res.statusText ?? 'OK',
+            };
+        }
+    } catch (e) {
+        console.log('app proxy error', e);
+    }
+    return null;
 }
 
 function injectProxyFunction() {

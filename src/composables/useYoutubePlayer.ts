@@ -1308,6 +1308,7 @@ export function useYoutubePlayer() {
               id: item.id,
               name: `${item.height}p`,
               height: item.height,
+              width: item.width,
               active: item.active
             });
           }

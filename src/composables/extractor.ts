@@ -6,9 +6,11 @@ enum ExtractType {
 }
 
 function checkSupport(type: string | null, data: any) {
+    /*
     if (type == ExtractType.streamNextInfo) {
         return true;
     }
+    */
     if (type == null || data == null) {
         return false;
     }

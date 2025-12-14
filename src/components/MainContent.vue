@@ -17,10 +17,12 @@ import { onMounted, ref, watch } from 'vue';
 import { useAppPlayerInterface, initWebMessage } from '@/composables/app_player_interface';
 import { useYoutubePlayer } from '@/composables/useYoutubePlayer';
 import { initExtractor } from '@/composables/extractor';
+import { initHlsServer } from '@/composables/hls_server';
 
 onMounted(async () => {
   initExtractor();
   initWebMessage();
+  initHlsServer();
   const {initInterface} = useAppPlayerInterface();
   const {playerComponents, ui, playerState, loadVideo, controlPlayer} = useYoutubePlayer();
   initInterface({

@@ -5,6 +5,11 @@ import { botguardService } from '@/services/botguard';
 import { base64ToU8, u8ToBase64 } from '../../../googlevideo/dist/src/utils/shared';
 import { Constants } from 'youtubei.js';
 
+interface PoTokenData {
+  coldStartToken: string | null;
+  playbackWebPoToken: string | null;
+}
+
 function _removeUnUsedFormats(adaptiveFormats: any) {
     if (Array.isArray(adaptiveFormats)) {
         let ret = adaptiveFormats.filter((item) => {
@@ -84,9 +89,7 @@ export function initHlsServer() {
         return;
     }
     let mWindow = window as any;
-    let playbackWebPoTokenCreationLock = false;
-    let playbackWebPoToken: string | undefined;
-    let coldStartToken: string | undefined;
+    let poTokenMap : Record<string, PoTokenData> = {};
     const getInnertube = useInnertube();
     // const getClientConfig = useOnesieConfig();
 
@@ -136,31 +139,36 @@ export function initHlsServer() {
 
     //#region --- WebPO Minter ---
     async function onMintPoTokenCallback(videoId: string | undefined) {
-      if (!playbackWebPoToken) {
-        await mintContentWebPO(videoId);
-      }
-
-      return playbackWebPoToken || coldStartToken || '';
+        if (poTokenMap[videoId ?? ''] == null) {
+            poTokenMap[videoId ?? ''] = {
+                coldStartToken: null,
+                playbackWebPoToken: null,
+            };
+        }
+        let token = poTokenMap[videoId ?? ''];
+        if (token.playbackWebPoToken == null) {
+            await mintContentWebPO(videoId);
+        }
+        return token.playbackWebPoToken || token.coldStartToken || '';
     }
 
     async function mintContentWebPO(videoId: string | undefined) {
-        if (!videoId || playbackWebPoTokenCreationLock) return;
+        let token = poTokenMap[videoId ?? ''];
+        if (!videoId) return;
         let playbackWebPoTokenContentBinding = videoId;
-        playbackWebPoTokenCreationLock = true;
         try {
-            coldStartToken = botguardService.mintColdStartToken(videoId);
+            token.coldStartToken = botguardService.mintColdStartToken(videoId);
             console.info('[Player]', `Cold start token created (Content binding: ${decodeURIComponent(playbackWebPoTokenContentBinding)})`);
 
             if (!botguardService.isInitialized()) await botguardService.reinit();
 
             if (botguardService.integrityTokenBasedMinter) {
-            playbackWebPoToken = await botguardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(playbackWebPoTokenContentBinding));
+            token.playbackWebPoToken = await botguardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(playbackWebPoTokenContentBinding));
             console.info('[Player]', `WebPO token created (Content binding: ${decodeURIComponent(playbackWebPoTokenContentBinding)})`);
             }
         } catch (err) {
             console.error('[Player]', 'Error minting WebPO token', err);
         } finally {
-            playbackWebPoTokenCreationLock = false;
         }
     }
     //#endregion

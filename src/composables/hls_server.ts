@@ -9,7 +9,8 @@ function _removeUnUsedFormats(adaptiveFormats: any) {
     if (Array.isArray(adaptiveFormats)) {
         let ret = adaptiveFormats.filter((item) => {
             return item.isVb !== true && item.mimeType?.includes('vp9') != true 
-            && item.mimeType?.includes('opus') != true;
+            && item.mimeType?.includes('opus') != true
+            && item.mimeType?.includes('av01') != true
         });
         for (const item of ret) {
             if (item.xtags == null) {
@@ -206,7 +207,7 @@ export function initHlsServer() {
                     osName: client.osName,
                     osVersion: client.osVersion,
                     clientName: parseInt(Constants.CLIENT_NAME_IDS[client.clientName as keyof typeof Constants.CLIENT_NAME_IDS]),
-                    clientVersion: "2.20251217.01.00" //client.clientVersion
+                    clientVersion: client.clientVersion
                 },
                 sabrContexts: [],
                 unsentSabrContexts: []
@@ -248,6 +249,7 @@ export function initHlsServer() {
             if (videoFormat != null) {
                 selectedVideoFormat = {
                     itag: videoFormat.itag,
+                    lastModified: videoFormat.lastModified,
                     xtags: videoFormat.xtags ?? '',
                 }
                 abrRequest.selectedFormatIds.push(selectedVideoFormat);
@@ -255,6 +257,7 @@ export function initHlsServer() {
             if (audioFormat != null) {
                 selectedAudioFormat = {
                     itag: audioFormat.itag,
+                    lastModified: audioFormat.lastModified,
                     xtags: audioFormat.xtags ?? '',
                 };
                 abrRequest.selectedFormatIds.push(selectedAudioFormat);
@@ -282,59 +285,11 @@ export function initHlsServer() {
 
             if (playerTimeMs) {
                 abrRequest.clientAbrState!.playerTimeMs = playerTimeMs;
-                abrRequest.clientAbrState!.elapsedWallTimeMs = playerTimeMs;
+                // abrRequest.clientAbrState!.elapsedWallTimeMs = playerTimeMs;
             }
 
             if (nextRequest?.playbackCookie != null) {
                 abrRequest.streamerContext!.playbackCookie = PlaybackCookie.encode(nextRequest?.playbackCookie).finish()
-            }
-
-            if (false && !isInit && audioBuffer?.durationMs == "29953") {
-                abrRequest.clientAbrState = {
-                    allowProximaLiveLatency: 0,
-                    audioRoute: 0,
-                    audioTrackId: "",
-                    av1QualityThreshold: 8192,
-                    bandwidthEstimate: "4572277",
-                    clientBitrateCapBytesPerSec: "0",
-                    clientViewportHeight: 496,
-                    clientViewportIsFlexible: false,
-                    clientViewportWidth: 867,
-                    dataSaverMode: false,
-                    detailedNetworkType: 0,
-                    disableStreamingXhr: false,
-                    drcEnabled: true,
-                    elapsedWallTimeMs: "7510",
-                    enableVoiceBoost: false,
-                    enabledTrackTypesBitfield: 0,
-                    field48: 0,
-                    field50: 0,
-                    field51: 0,
-                    field57: "229",
-                    field60: 0,
-                    field67: 0,
-                    isPrefetch: false,
-                    lastManualDirection: 1,
-                    lastManualSelectedResolution: 1080,
-                    maxAudioQuality: 0,
-                    maxPacingRate: 0,
-                    minAudioQuality: 0,
-                    networkMeteredState: 0,
-                    playbackRate: 0,
-                    playerState: "0",
-                    playerTimeMs: "6995",
-                    preferVp9: false,
-                    sabrForceMaxNetworkInterruptionDurationMs: "5333",
-                    sabrForceProxima: 0,
-                    sabrReportRequestCancellationInfo: 0,
-                    sabrSupportQualityConstraints: false,
-                    stickyResolution: 1080,
-                    timeSinceLastActionMs: "7060",
-                    timeSinceLastManualFormatSelectionMs: "772686113",
-                    timeSinceLastSeek: "7502",
-                    videoQualitySetting: 0,
-                    visibility: 0,
-                }
             }
 
             console.log('abrRequest', abrRequest);

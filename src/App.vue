@@ -432,7 +432,7 @@ async function initInnertube() {
     console.info('[App]', `Initializing InnerTube API [firstTime=${firstTime}]`);
 
     const instance = await Innertube.create({
-      cache: new UniversalCache(true),
+      // cache: new UniversalCache(true),
       fetch: fetchFunction
     });
 

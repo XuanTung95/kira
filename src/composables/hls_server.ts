@@ -127,12 +127,17 @@ export function initHlsServer() {
         if (serverAbrStreamingUrl != null) {
             decodedAbrUrl = await innertube.session.player!.decipher(serverAbrStreamingUrl)
         }
+        let redirectHlsUrl = null;
+        if (ret?.data?.videoDetails?.isLive == true) {
+            redirectHlsUrl = streamingData?.hlsManifestUrl;
+        }
         let response = {
             videoDetails: data?.videoDetails,
             streamingData: data?.streamingData,
             playerConfig: data?.playerConfig,
             playabilityStatus: data?.playabilityStatus,
             decodedAbrUrl: decodedAbrUrl,
+            redirectHlsUrl: redirectHlsUrl,
         }
         return response;
     }

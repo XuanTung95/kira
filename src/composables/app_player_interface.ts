@@ -685,3 +685,16 @@ export function useAppPlayerInterface() {
         injectProxyFunction: injectProxyFunction,
     };
 }
+
+export async function getGlobalInfo() {
+    if ((window as any).flutter_inappwebview == null) {
+        return null;
+    }
+    const res = await (window as any).flutter_inappwebview.callHandler(
+        'sendToApp',
+        {
+            cmd: 'getGlobalInfo',
+        },
+    );
+    return res;
+}

@@ -276,7 +276,7 @@ export function initHlsServer() {
                 abrRequest.selectedFormatIds.push(selectedAudioFormat);
             }
 
-            if (videoBuffer != null) {
+            if (!isInit && videoBuffer != null) {
                 abrRequest.bufferedRanges.push({
                     durationMs: videoBuffer.durationMs ?? '0',
                     endSegmentIndex: videoBuffer.endSegmentIndex ?? 1,
@@ -286,7 +286,7 @@ export function initHlsServer() {
                 });
             }
 
-            if (audioBuffer != null) {
+            if (!isInit && audioBuffer != null) {
                 abrRequest.bufferedRanges.push({
                     durationMs: audioBuffer.durationMs ?? '0',
                     endSegmentIndex: audioBuffer.endSegmentIndex ?? 1,

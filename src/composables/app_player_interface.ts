@@ -690,11 +690,31 @@ export async function getGlobalInfo() {
     if ((window as any).flutter_inappwebview == null) {
         return null;
     }
-    const res = await (window as any).flutter_inappwebview.callHandler(
-        'sendToApp',
+    return callSendToApp(
         {
             cmd: 'getGlobalInfo',
         },
     );
+}
+
+ async function callSendToApp(data: any) {
+    if ((window as any).flutter_inappwebview == null) {
+        return null;
+    }
+    const res = await (window as any).flutter_inappwebview.callHandler(
+        'sendToApp',
+        data,
+    );
     return res;
+}
+
+export async function onInitCodeDone() {
+    if ((window as any).flutter_inappwebview == null) {
+        return null;
+    }
+    return callSendToApp(
+        {
+            cmd: 'initCodeDone',
+        },
+    );
 }

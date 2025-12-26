@@ -4,6 +4,7 @@ import { useOnesieConfig } from './useOnesieConfig';
 import { botguardService } from '@/services/botguard';
 import { base64ToU8, u8ToBase64 } from '../../../googlevideo/dist/src/utils/shared';
 import { Constants } from 'youtubei.js';
+import { onInitCodeDone } from './app_player_interface'
 
 interface PoTokenData {
   coldStartToken: string | null;
@@ -344,5 +345,7 @@ export function initHlsServer() {
 
     mWindow.hlsServer = {
         handleCmd: handleAppCommand
-    }
+    };
+
+    onInitCodeDone();
 }

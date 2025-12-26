@@ -1,6 +1,7 @@
 import {fetchFunction } from '@/utils/helpers';
 import {setProxyForDesktop} from '@/composables/useProxySettings';
 import { router } from '../router'
+import { ClientInfo } from './src/extractor_data';
 
 let _requestId: number = 0;
 
@@ -95,6 +96,20 @@ async function proxyFetch(input: string | Request | URL, init?: RequestInit): Pr
         h.forEach((value, key) => (headers[key] = value));
     } else if (input instanceof Request) {
         input.headers.forEach((value, key) => (headers[key] = value));
+    }
+    if (window && (window as any).appClientInfo?.cookieLogin?.SAPISID) {
+        let client = (window as any).appClientInfo;
+        if (client.cookieLogin && client.getLoginHeaderIfAny) {
+            if (url.includes('v1/player?')) {
+                /// Thêm login header
+                let loginHeaders = await client.getLoginHeaderIfAny();
+                if (loginHeaders?.cookie && loginHeaders['x-goog-visitor-id'] != null) {
+                    headers['cookie'] = loginHeaders['cookie']
+                    headers['x-goog-visitor-id'] = loginHeaders['x-goog-visitor-id']
+                    headers['authorization'] = loginHeaders['authorization']
+                }
+            }
+        }
     }
 
     let body: any = init?.body;
@@ -278,6 +293,9 @@ async function initEnv() {
     console.log('sendToApp res', JSON.stringify(res))
     if (res.useWebMessage == true) {
         /// use webmessage
+    }
+    if (res.info != null) {
+        (window as any).appClientInfo = new ClientInfo(res.info);
     }
     if (res.injectProxy == true) {
         injectProxyFunction();
@@ -687,7 +705,7 @@ export function useAppPlayerInterface() {
 }
 
 export async function getGlobalInfo() {
-    if ((window as any).flutter_inappwebview == null) {
+    if (!window || (window as any).flutter_inappwebview == null) {
         return null;
     }
     return callSendToApp(
@@ -697,8 +715,38 @@ export async function getGlobalInfo() {
     );
 }
 
+export async function getGlobalInfoShort() {
+    if (!window || (window as any).flutter_inappwebview == null) {
+        return null;
+    }
+    return callSendToApp(
+        {
+            cmd: 'getGlobalInfoShort',
+        },
+    );
+}
+
+export async function getClientData() {
+    if (!window || (window as any).flutter_inappwebview == null) {
+        return null;
+    }
+    try {
+        let res = await callSendToApp(
+            {
+                cmd: 'getClientData',
+            },
+        );
+        if (res?.info != null) {
+            (window as any).appClientInfo = new ClientInfo(res?.info);
+        }
+        return res;
+    } catch (_) {
+        return null;
+    }
+}
+
  async function callSendToApp(data: any) {
-    if ((window as any).flutter_inappwebview == null) {
+    if (!window || (window as any).flutter_inappwebview == null) {
         return null;
     }
     const res = await (window as any).flutter_inappwebview.callHandler(
@@ -709,7 +757,7 @@ export async function getGlobalInfo() {
 }
 
 export async function onInitCodeDone() {
-    if ((window as any).flutter_inappwebview == null) {
+    if (!window || (window as any).flutter_inappwebview == null) {
         return null;
     }
     return callSendToApp(

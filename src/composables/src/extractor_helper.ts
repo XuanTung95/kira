@@ -51,11 +51,11 @@ export async function getApiSIDHash(SAPISID: string): Promise<string | null> {
     const time = Math.floor(Date.now() / 1000); // seconds
     const token = `${time} ${SAPISID} ${origin}`;
     const sha1Hash = await calSha1(token);
-    if (sha1Hash != null) {
+    if (sha1Hash == null) {
         return null;
     }
     return `SAPISIDHASH ${time}_${sha1Hash}`;
-  }
+}
 
 async function sendMessageToApp(data: any) : Promise<any> {
     if (window == null || !(window as any).flutter_inappwebview?.callHandler) {
@@ -65,6 +65,7 @@ async function sendMessageToApp(data: any) : Promise<any> {
         'sendToApp',
         data,
     );
+    return res;
 }
 
 export class ParserHelper {

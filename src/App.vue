@@ -430,9 +430,13 @@ async function initInnertube() {
 
   try {
     console.info('[App]', `Initializing InnerTube API [firstTime=${firstTime}]`);
-
+    let mWindow = window as any;
+    let visitorData = mWindow?.appClientInfo?.visitorData;
     const instance = await Innertube.create({
       // cache: new UniversalCache(true),
+      visitor_data: visitorData,
+      lang: mWindow?.appClientInfo?.languageCode,
+      location: mWindow?.appClientInfo?.countryCode,
       fetch: fetchFunction
     });
 

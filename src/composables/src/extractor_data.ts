@@ -49,13 +49,16 @@ export class ClientInfo {
 
     public async getLoginHeaderIfAny() {
         let headers = this.getHeaders();
-        let sapisid = this.getSAPISID();
-        if (sapisid) {
-            let hash = await getApiSIDHash(sapisid);
-            if (hash != null) {
-                headers.authorization = hash;
-                headers.cookie = this.toCookieString(this.cookieLogin);
+        try {
+            let sapisid = this.getSAPISID();
+            if (sapisid) {
+                let hash = await getApiSIDHash(sapisid);
+                if (hash != null) {
+                    headers.authorization = hash;
+                    headers.cookie = this.toCookieString(this.cookieLogin);
+                }
             }
+        } catch (_) {
         }
         return headers;
     }

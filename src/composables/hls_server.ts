@@ -4,7 +4,7 @@ import { useOnesieConfig } from './useOnesieConfig';
 import { botguardService } from '@/services/botguard';
 import { base64ToU8, u8ToBase64 } from '../../../googlevideo/dist/src/utils/shared';
 import { Constants } from 'youtubei.js';
-import { onInitCodeDone } from './app_player_interface'
+import { onInitCodeDone, getClientData } from './app_player_interface'
 
 interface PoTokenData {
   coldStartToken: string | null;
@@ -85,6 +85,33 @@ function _getVideoFormats(adaptiveFormats: any) : FormatId[] {
     return ret;
 }
 
+function filterAudioByLanguagePerItag(
+  formats: any[],
+  language: string,
+): any[] {
+  const byItag = new Map<number, any[]>();
+  for (const f of formats) {
+    let itag = f.itag ?? -1;
+    if (!byItag.has(itag)) {
+      byItag.set(itag, []);
+    }
+    byItag.get(itag)!.push(f);
+  }
+  const result: any[] = [];
+  for (const [itag, list] of byItag.entries()) {
+    // tìm các audio track có ngôn ngữ mong muốn
+    const matched = list.filter(
+      f => f.audioTrack?.id?.includes(language) == true
+    );
+    if (matched.length > 0) {
+      result.push(...matched);
+    } else {
+      result.push(...list);
+    }
+  }
+  return result;
+}
+
 export function initHlsServer() {
     if (window == null) {
         return;
@@ -101,7 +128,7 @@ export function initHlsServer() {
 
     async function getPlayerResponseInternal(videoId: string) {
         const innertube = await getInnertube();
-        // const clientConfig = await getClientConfig();
+        await getClientData();
 
         const requestParams: Record<string, any> = {
             videoId,
@@ -116,11 +143,23 @@ export function initHlsServer() {
                 }
             }
         };
+        let cInfo = (window as any)?.appClientInfo;
+        let hl = cInfo?.languageCode;
+        let gl = cInfo?.countryCode;
+        let client = innertube.session.context.client;
+        if (hl && gl) {
+            client.hl = hl;
+            client.gl = gl;
+        }
         let ret = await innertube.actions.execute('/player', { ...requestParams, parse: false });
         let streamingData = ret?.data?.streamingData;
         let adaptiveFormats = streamingData?.adaptiveFormats;
         if (adaptiveFormats) {
-            streamingData!.adaptiveFormats = _removeUnUsedFormats(adaptiveFormats);
+            let formats = _removeUnUsedFormats(adaptiveFormats);
+            if (hl) {
+                formats = filterAudioByLanguagePerItag(formats, hl);
+            }
+            streamingData!.adaptiveFormats = formats;
         }
         let data = ret.data;
         let serverAbrStreamingUrl = streamingData?.serverAbrStreamingUrl;

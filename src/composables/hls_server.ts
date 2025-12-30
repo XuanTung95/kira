@@ -176,6 +176,7 @@ export function initHlsServer() {
             streamingData: data?.streamingData,
             playerConfig: data?.playerConfig,
             playabilityStatus: data?.playabilityStatus,
+            captionTracks: data?.captions?.playerCaptionsTracklistRenderer?.captionTracks,
             decodedAbrUrl: decodedAbrUrl,
             redirectHlsUrl: redirectHlsUrl,
         }

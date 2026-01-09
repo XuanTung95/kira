@@ -351,6 +351,7 @@ export function initHlsServer() {
             let body = VideoPlaybackAbrRequest.encode(abrRequest).finish();
             const sabrUrl = new URL(decodedAbrUrl || '');
             sabrUrl.searchParams.set('rn', requestNum);
+            sabrUrl.searchParams.set('alr','yes');
             let requestUrl = sabrUrl.toString();
             let headers = {
                 'origin': 'https://www.youtube.com',

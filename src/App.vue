@@ -364,7 +364,7 @@ import { useDebounce } from '@/composables/useDebounce';
 import { useProxySettings } from '@/composables/useProxySettings';
 import { useToastStore } from '@/stores/toastStore';
 
-import { Innertube, Platform, UniversalCache, YTNodes, Types } from 'youtubei.js/web';
+import { Innertube, Platform, UniversalCache, YTNodes, Types, ClientType } from 'youtubei.js/web';
 import { base64ToU8 } from 'googlevideo/utils';
 import { botguardService } from '@/services/botguard';
 import {useAppPlayerInit} from '@/composables/app_player_interface';
@@ -434,6 +434,7 @@ async function initInnertube() {
     let visitorData = mWindow?.appClientInfo?.visitorData;
     const instance = await Innertube.create({
       // cache: new UniversalCache(true),
+      client_type: ClientType.MWEB,
       visitor_data: visitorData,
       lang: mWindow?.appClientInfo?.languageCode,
       location: mWindow?.appClientInfo?.countryCode,

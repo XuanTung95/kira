@@ -434,7 +434,7 @@ async function initInnertube() {
     let visitorData = mWindow?.appClientInfo?.visitorData;
     const instance = await Innertube.create({
       // cache: new UniversalCache(true),
-      client_type: ClientType.WEB,
+      client_type: ClientType.MWEB,
       visitor_data: visitorData,
       lang: mWindow?.appClientInfo?.languageCode,
       location: mWindow?.appClientInfo?.countryCode,

@@ -6,7 +6,7 @@ const PROXY_SETTINGS_KEY = 'proxy_settings';
 const settingsState = reactive<ProxySettings>({
   protocol: 'http',
   host: 'localhost',
-  port: '5173'
+  port: '5175'
   // host: 'localhost',
   // port: '8080'
 });
@@ -32,7 +32,7 @@ function saveSettings() {
 loadSettings();
 
 export function setProxyForDesktop() {
-  if (settingsState.port == '5173') {
+  if (settingsState.port == '5175') {
     settingsState.port = '8080';
   }
 }

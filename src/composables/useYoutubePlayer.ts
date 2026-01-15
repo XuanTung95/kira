@@ -911,6 +911,13 @@ export function useYoutubePlayer() {
     }
   }
 
+  function sanitizeForBtoa(str: string): string {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\x00-\xFF]/g, '?');
+  }
+
   async function loadManifest(apiResponse: ApiResponse) {
     const { player, sabrAdapter, videoElement } = playerComponents.value;
     const innertube = await getInnertube();
@@ -943,13 +950,20 @@ export function useYoutubePlayer() {
       } else if (isPostLiveDVR) {
         manifestUri = videoInfo.streaming_data.hls_manifest_url || `${videoInfo.streaming_data.dash_manifest_url}/mpd_version/7`;
       } else {
-        manifestUri = `data:application/dash+xml;base64,${btoa(await videoInfo.toDash({
+        let content = await videoInfo.toDash({
           manifest_options: {
             is_sabr: true,
             captions_format: 'vtt',
             include_thumbnails: false
           }
-        }))}`;
+        });
+        let base64 = null;
+        try {
+          base64 = btoa(content);
+        } catch (_) {
+          base64 = btoa(sanitizeForBtoa(content));
+        }
+        manifestUri = `data:application/dash+xml;base64,${base64}`;
       }
     }
 

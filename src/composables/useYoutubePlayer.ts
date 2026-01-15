@@ -821,7 +821,7 @@ export function useYoutubePlayer() {
     }
     let captionTracks = ret?.data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
     if (captionTracks) {
-      ret.data.captions.playerCaptionsTracklistRenderer.captionTracks = null;
+      ret!.data!.captions!.playerCaptionsTracklistRenderer!.captionTracks =  [];
     }
     return ret;
     try {

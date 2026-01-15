@@ -819,6 +819,10 @@ export function useYoutubePlayer() {
         return item.isVb !== true;
       });
     }
+    let captionTracks = ret?.data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+    if (captionTracks) {
+      ret.data.captions.playerCaptionsTracklistRenderer.captionTracks = null;
+    }
     return ret;
     try {
       return await makePlayerRequest({

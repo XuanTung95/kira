@@ -620,6 +620,9 @@ innertubePromise = initInnertube();
 clientConfigPromise = fetchOnesieHotConfig();
 
 onMounted(async () => {
+  if (window) {
+    (window as any).getInnertube = getInnertube;
+  }
   const isExtensionInstalled = checkExtension();
 
   if (!isProxyConfigured.value && !isExtensionInstalled) {

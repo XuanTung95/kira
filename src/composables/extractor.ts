@@ -1,16 +1,20 @@
 import {ClientInfo} from './src/extractor_data';
+import { LoadStreamInfo } from './src/load_stream_info';
 import {StreamNextInfo} from './src/stream_next_info';
 
 enum ExtractType {
     streamNextInfo = 'streamNextInfo',
+    streamInfo = 'streamInfo',
+}
+
+function getSupportNames() {
+    return 'streamInfo';
 }
 
 function checkSupport(type: string | null, data: any) {
-    /*
-    if (type == ExtractType.streamNextInfo) {
+    if (type == ExtractType.streamInfo) {
         return true;
     }
-    */
     if (type == null || data == null) {
         return false;
     }
@@ -24,20 +28,11 @@ async function extract(type: string, data: any) {
         if (type == ExtractType.streamNextInfo) {
             let res = await new StreamNextInfo(clientInfo, data).fetch();
             return res;
+        } else if (type == ExtractType.streamInfo) {
+            let res = await new LoadStreamInfo(clientInfo, data).fetch();
+            return res;
         }
-        let res: Response = await proxyFetch('https://abc.com', {
-            method: 'POST',
-            headers: {
-            },
-            body: {
-                'test': true,
-                'type': type,
-                'data': data
-            }
-        });
-        let json = await res.json();
-        console.log('json', json);
-        return json;
+        return null;
     }
     return null;
 }
@@ -49,6 +44,7 @@ export function initExtractor() {
     let mWindow = window as any;
     mWindow.extractor = {
         checkSupport: checkSupport,
+        supportNames: getSupportNames,
         extract: extract,
     }
 }

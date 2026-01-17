@@ -785,6 +785,29 @@ export function useYoutubePlayer() {
     });
   }
 
+  function convertHlsPathStyleToQueryStyle(url: any) {
+    const u = new URL(url);
+    const parts = u.pathname.split('/').filter(Boolean);
+    const manifestIndex = parts.indexOf('hls_variant');
+    if (manifestIndex === -1) {
+      console.error('Not a hls_variant manifest URL');
+      return url;
+    }
+    // phần params nằm giữa hls_variant và file/index.m3u8
+    const paramsParts = parts.slice(manifestIndex + 1, -2);
+    const searchParams = new URLSearchParams();
+    for (let i = 0; i < paramsParts.length; i += 2) {
+      const key = paramsParts[i];
+      const value = paramsParts[i + 1];
+      if (key && value) {
+        searchParams.set(key, decodeURIComponent(value));
+      }
+    }
+    u.pathname = `/api/manifest/hls_variant/file/index.m3u8`;
+    u.search = searchParams.toString();
+    return u.toString();
+  }
+
   async function fetchVideoInfo(videoId: string, reloadPlaybackContext?: ReloadPlaybackContext): Promise<ApiResponse> {
     const innertube = await getInnertube();
     const clientConfig = await getClientConfig();
@@ -822,6 +845,13 @@ export function useYoutubePlayer() {
     let captionTracks = ret?.data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
     if (captionTracks) {
       ret!.data!.captions!.playerCaptionsTracklistRenderer!.captionTracks =  [];
+    }
+    let hlsManifestUrl = ret?.data?.streamingData?.hlsManifestUrl;
+    if (hlsManifestUrl) {
+      try {
+        let hlsUrl = convertHlsPathStyleToQueryStyle(hlsManifestUrl);
+        ret!.data!.streamingData!.hlsManifestUrl = await innertube.session.player!.decipher(hlsUrl);
+      } catch (e) {}
     }
     return ret;
     try {
@@ -918,6 +948,20 @@ export function useYoutubePlayer() {
       .replace(/[^\x00-\xFF]/g, '?');
   }
 
+  async function isSupportDash() {
+    try {
+      let supports = await shaka.Player.probeSupport();
+      if (supports) {
+        let manifest = supports.manifest;
+        if (manifest && manifest['application/dash+xml'] == false) {
+          return false;
+        }
+      }
+    } catch (e) {
+    }
+    return true;
+  }
+
   async function loadManifest(apiResponse: ApiResponse) {
     const { player, sabrAdapter, videoElement } = playerComponents.value;
     const innertube = await getInnertube();
@@ -932,7 +976,8 @@ export function useYoutubePlayer() {
 
     isLive = !!videoInfo.basic_info.is_live;
     drmParams = (apiResponse.data.streamingData as any)?.drmParams;
-    if (window.MediaSource == null) {
+    let supportDash = await isSupportDash();
+    if (supportDash == false) {
       /// Không hỗ trợ MediaSource -> play mp4 360p
       let hls = videoInfo?.streaming_data?.hls_manifest_url;
       if (hls == null) {
@@ -943,7 +988,6 @@ export function useYoutubePlayer() {
             hls = await innertube.session.player!.decipher(url);
           }
         }
-      } else {
       }
       if (hls != null) {
         try {
@@ -980,7 +1024,7 @@ export function useYoutubePlayer() {
     let manifestUri: string | undefined;
     if (videoInfo.streaming_data) {
       if (isLive) {
-        manifestUri = videoInfo.streaming_data.dash_manifest_url ? `${videoInfo.streaming_data.dash_manifest_url}/mpd_version/7` : videoInfo.streaming_data.hls_manifest_url;
+        manifestUri = videoInfo.streaming_data.hls_manifest_url ? videoInfo.streaming_data.hls_manifest_url : `${videoInfo.streaming_data.dash_manifest_url}/mpd_version/7`;
       } else if (isPostLiveDVR) {
         manifestUri = videoInfo.streaming_data.hls_manifest_url || `${videoInfo.streaming_data.dash_manifest_url}/mpd_version/7`;
       } else {

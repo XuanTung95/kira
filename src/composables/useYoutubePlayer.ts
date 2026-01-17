@@ -932,6 +932,40 @@ export function useYoutubePlayer() {
 
     isLive = !!videoInfo.basic_info.is_live;
     drmParams = (apiResponse.data.streamingData as any)?.drmParams;
+    if (window.MediaSource == null) {
+      /// Không hỗ trợ MediaSource -> play mp4 360p
+      let hls = videoInfo?.streaming_data?.hls_manifest_url;
+      if (hls == null) {
+        let formats = apiResponse.data.streamingData?.formats;
+        if (formats != null && Array.isArray(formats) && formats.length > 0) {
+          let url = formats[0].url;
+          if (url) {
+            hls = await innertube.session.player!.decipher(url);
+          }
+        }
+      } else {
+      }
+      if (hls != null) {
+        try {
+          if (playbackTracking && ENABLE_PLAYBACK_TRACKING) {
+            reportPlaybackStats(playbackTracking.videostats_playback_url).then(() => {
+              reportWatchTimeStats(playbackTracking!.videostats_watchtime_url);
+              playbackTrackerInterval = setInterval(() => reportWatchTimeStats(playbackTracking!.videostats_watchtime_url), 30000) as unknown as number;
+            });
+          }
+        } catch (err) {
+          console.error('[Player]', 'Error reporting playback stats', err);
+        }
+        await player.load(hls);
+        videoElement.play().catch((err) => {
+          if (err instanceof DOMException && err.name === 'NotAllowedError') {
+            console.warn('[Player]', 'Autoplay was prevented by the browser.', err);
+            addToast('Autoplay was prevented by the browser.', 'info');
+          }
+        });
+        return;
+      }
+    }
 
     if (drmParams) {
       player.configure({ drm: { servers: { [WIDEVINE_DRM_SYSTEM]: INNERTUBE_DRM_LICENSE_URL } } });

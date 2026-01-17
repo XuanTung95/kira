@@ -547,6 +547,8 @@ export function useYoutubePlayer() {
             msg: `Streaming error ${error}`
           });
         },
+        preferNativeHls: true,
+        useNativeHlsOnSafari: true,
         bufferingGoal: 120,
         rebufferingGoal: 0.01,
         bufferBehind: 300,
@@ -839,7 +841,9 @@ export function useYoutubePlayer() {
     if (adaptiveFormats) {
       /// bỏ audio có isVb == true;
       ret.data!.streamingData!.adaptiveFormats = adaptiveFormats.filter((item) => {
-        return item.isVb !== true;
+        return item.isVb !== true && item.mimeType?.includes('vp9') != true 
+            && item.mimeType?.includes('opus') != true
+            && item.mimeType?.includes('av01') != true;
       });
     }
     let captionTracks = ret?.data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
@@ -950,16 +954,34 @@ export function useYoutubePlayer() {
 
   async function isSupportDash() {
     try {
-      let supports = await shaka.Player.probeSupport();
-      if (supports) {
-        let manifest = supports.manifest;
-        if (manifest && manifest['application/dash+xml'] == false) {
-          return false;
+      const supports = await shaka.Player.probeSupport();
+      const manifest = supports?.manifest || {};
+      const hasDashManifest = Object.entries(manifest).some(
+        ([key, value]) => value === true && key.includes('dash')
+      );
+      if (!hasDashManifest) {
+        return false;
+      }
+      const media = supports?.media || {};
+      let hasAvc1 = false;
+      let hasMp4a = false;
+      for (const [mime, isSupported] of Object.entries(media)) {
+        if (isSupported !== true) continue;
+        if (mime.includes('avc1')) {
+          hasAvc1 = true;
+        }
+        if (mime.includes('mp4a')) {
+          hasMp4a = true;
+        }
+        if (hasAvc1 && hasMp4a) {
+          return true;
         }
       }
+      return false;
     } catch (e) {
+      console.error('probeSupport error', e);
+      return false;
     }
-    return true;
   }
 
   async function loadManifest(apiResponse: ApiResponse) {
@@ -983,9 +1005,11 @@ export function useYoutubePlayer() {
       if (hls == null) {
         let formats = apiResponse.data.streamingData?.formats;
         if (formats != null && Array.isArray(formats) && formats.length > 0) {
-          let url = formats[0].url;
-          if (url) {
-            hls = await innertube.session.player!.decipher(url);
+          let format = formats[0];
+          let url = format.url;
+          let sc = format.signatureCipher;
+          if (url || sc) {
+            hls = await innertube.session.player!.decipher(url, sc);
           }
         }
       }

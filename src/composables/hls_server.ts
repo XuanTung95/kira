@@ -5,6 +5,7 @@ import { botguardService } from '@/services/botguard';
 import { base64ToU8, u8ToBase64 } from '../../../googlevideo/dist/src/utils/shared';
 import { Constants } from 'youtubei.js';
 import { onInitCodeDone, getClientData } from './app_player_interface'
+import { sendMessageToApp } from './src/extractor_helper'
 
 interface PoTokenData {
   coldStartToken: string | null;
@@ -372,16 +373,25 @@ export function initHlsServer() {
 
     async function handleAppCommand(cmd: string, data: any) {
         console.log('hlsServer cmd', cmd, data)
+        let asyncId = data?.asyncId;
+        let result = null;
         if (cmd == 'getPlayerResponse') {
-            return getPlayerResponse(data);
+            result = await getPlayerResponse(data);
         } else if (cmd == 'getInitSegmentBody') {
-            return getSegmentRequest(data, true);
+            result = await  getSegmentRequest(data, true);
         } else if (cmd == 'getNextSegmentBody') {
-            return getSegmentRequest(data, false);
+            result = await getSegmentRequest(data, false);
         } else if (cmd == 'log') {
             // console.log('log', data);
         }
-        return null;
+        if (asyncId != null) {
+            sendMessageToApp({
+                asyncId: asyncId,
+                cmd: 'returnAsyncResult',
+                result: result,
+            });
+        }
+        return result;
     }
 
     mWindow.hlsServer = {

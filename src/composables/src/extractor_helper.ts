@@ -57,7 +57,7 @@ export async function getApiSIDHash(SAPISID: string): Promise<string | null> {
     return `SAPISIDHASH ${time}_${sha1Hash}`;
 }
 
-async function sendMessageToApp(data: any) : Promise<any> {
+export async function sendMessageToApp(data: any) : Promise<any> {
     if (window == null || !(window as any).flutter_inappwebview?.callHandler) {
         return;
     }

@@ -103,6 +103,29 @@ async function initSilencePlayer() {
   }
 }
 
+export function convertHlsPathStyleToQueryStyle(url: any) {
+  const u = new URL(url);
+  const parts = u.pathname.split('/').filter(Boolean);
+  const manifestIndex = parts.indexOf('hls_variant');
+  if (manifestIndex === -1) {
+    console.error('Not a hls_variant manifest URL');
+    return url;
+  }
+  // phần params nằm giữa hls_variant và file/index.m3u8
+  const paramsParts = parts.slice(manifestIndex + 1, -2);
+  const searchParams = new URLSearchParams();
+  for (let i = 0; i < paramsParts.length; i += 2) {
+    const key = paramsParts[i];
+    const value = paramsParts[i + 1];
+    if (key && value) {
+      searchParams.set(key, decodeURIComponent(value));
+    }
+  }
+  u.pathname = `/api/manifest/hls_variant/file/index.m3u8`;
+  u.search = searchParams.toString();
+  return u.toString();
+}
+
 export function useYoutubePlayer() {
   const route = useRoute();
   const getInnertube = useInnertube();
@@ -785,29 +808,6 @@ export function useYoutubePlayer() {
         response.data = shaka.util.Uint8ArrayUtils.fromBase64(wrapped.license);
       }
     });
-  }
-
-  function convertHlsPathStyleToQueryStyle(url: any) {
-    const u = new URL(url);
-    const parts = u.pathname.split('/').filter(Boolean);
-    const manifestIndex = parts.indexOf('hls_variant');
-    if (manifestIndex === -1) {
-      console.error('Not a hls_variant manifest URL');
-      return url;
-    }
-    // phần params nằm giữa hls_variant và file/index.m3u8
-    const paramsParts = parts.slice(manifestIndex + 1, -2);
-    const searchParams = new URLSearchParams();
-    for (let i = 0; i < paramsParts.length; i += 2) {
-      const key = paramsParts[i];
-      const value = paramsParts[i + 1];
-      if (key && value) {
-        searchParams.set(key, decodeURIComponent(value));
-      }
-    }
-    u.pathname = `/api/manifest/hls_variant/file/index.m3u8`;
-    u.search = searchParams.toString();
-    return u.toString();
   }
 
   async function fetchVideoInfo(videoId: string, reloadPlaybackContext?: ReloadPlaybackContext): Promise<ApiResponse> {

@@ -6,6 +6,7 @@ import { base64ToU8, u8ToBase64 } from '../../../googlevideo/dist/src/utils/shar
 import { Constants } from 'youtubei.js';
 import { onInitCodeDone, getClientData } from './app_player_interface'
 import { sendMessageToApp } from './src/extractor_helper'
+import { convertHlsPathStyleToQueryStyle } from './useYoutubePlayer'
 
 interface PoTokenData {
   coldStartToken: string | null;
@@ -171,6 +172,10 @@ export function initHlsServer() {
         let redirectHlsUrl = null;
         if (ret?.data?.videoDetails?.isLive == true) {
             redirectHlsUrl = streamingData?.hlsManifestUrl;
+            if (redirectHlsUrl) {
+                redirectHlsUrl = convertHlsPathStyleToQueryStyle(redirectHlsUrl);
+                redirectHlsUrl = await innertube.session.player!.decipher(redirectHlsUrl)
+            }
         }
         let response = {
             videoDetails: data?.videoDetails,

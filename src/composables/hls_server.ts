@@ -170,7 +170,7 @@ export function initHlsServer() {
             decodedAbrUrl = await innertube.session.player!.decipher(serverAbrStreamingUrl)
         }
         let redirectHlsUrl = null;
-        if (ret?.data?.videoDetails?.isLive == true) {
+        if (streamingData?.hlsManifestUrl) {
             redirectHlsUrl = streamingData?.hlsManifestUrl;
             if (redirectHlsUrl) {
                 redirectHlsUrl = convertHlsPathStyleToQueryStyle(redirectHlsUrl);

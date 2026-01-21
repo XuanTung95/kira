@@ -3,7 +3,7 @@ import { useInnertube } from './useInnertube';
 import { useOnesieConfig } from './useOnesieConfig';
 import { botguardService } from '@/services/botguard';
 import { base64ToU8, u8ToBase64 } from '../../../googlevideo/dist/src/utils/shared';
-import { Constants } from 'youtubei.js';
+import { Utils, Constants, Innertube, YT } from 'youtubei.js/web';
 import { onInitCodeDone, getClientData } from './app_player_interface'
 import { sendMessageToApp } from './src/extractor_helper'
 import { convertHlsPathStyleToQueryStyle } from './useYoutubePlayer'
@@ -12,6 +12,8 @@ interface PoTokenData {
   coldStartToken: string | null;
   playbackWebPoToken: string | null;
 }
+
+let videoHistory: any = {};
 
 function _removeUnUsedFormats(adaptiveFormats: any) {
     if (Array.isArray(adaptiveFormats)) {
@@ -114,6 +116,65 @@ function filterAudioByLanguagePerItag(
   return result;
 }
 
+async function reportPlaybackStats(videostatsPlaybackUrl: string, innertube: Innertube, startTime: number, clientPlaybackNonce: string) {
+    try {
+        const relativeTime = Math.floor(Date.now() / 1000) - startTime;
+        const params = {
+            cpn: clientPlaybackNonce,
+            rt: relativeTime,
+            rtn: relativeTime,
+            volume: 1,
+            muted: 10,
+            fmt: 0
+        };
+        const clientInfo = {
+            client_name: innertube.session.context.client.clientName,
+            client_version: innertube.session.context.client.clientVersion
+        };
+        let res = await innertube.actions.stats(videostatsPlaybackUrl, clientInfo, params);
+        console.info(`[reportPlaybackStats] ${res.status}`,);
+        return res;
+    } catch (err) {
+        console.error('[Player]', 'Failed to report stats', err);
+    }
+}
+
+async function reportWatchTimeStats(innertube: Innertube, startTime: number, clientPlaybackNonce: string, currentTime: number, watchtimeUrl: string) {
+    try {
+        const relativeTime = Math.floor(Date.now() / 1000) - startTime;
+        const params: Record<string, any> = {
+            cpn: clientPlaybackNonce,
+            rt: relativeTime,
+            rti: relativeTime,
+            cmt: currentTime,
+            cbr: 'Chrome',
+            cbrver: '115.0.0.0',
+            cplayer: 'UNIPLAYER',
+            cos: 'Windows',
+            cosver: '11',
+            cplatform: 'DESKTOP',
+            hl: 'en_US',
+            cr: 'US',
+            et: currentTime,
+            st: startTime,
+            state: 'playing',
+            volume: 1,
+            ver: 2,
+            muted: 0,
+            fmt: 0
+        };
+        params.final = 1;
+        const clientInfo = {
+            client_name: innertube.session.context.client.clientName,
+            client_version: innertube.session.context.client.clientVersion
+        };
+        let res = await innertube.actions.stats(watchtimeUrl, clientInfo, params);
+        console.info(`[reportWatchTimeStats] ${res.status} ${currentTime}`);
+    } catch (err) {
+        console.error('[Player]', 'Failed to report stats', err);
+    }
+}
+
 export function initHlsServer() {
     if (window == null) {
         return;
@@ -131,7 +192,8 @@ export function initHlsServer() {
     async function getPlayerResponseInternal(videoId: string) {
         const innertube = await getInnertube();
         await getClientData();
-
+        const clientPlaybackNonce = Utils.generateRandomString(12);
+        const startTime = Math.floor(Date.now() / 1000);
         const requestParams: Record<string, any> = {
             videoId,
             contentCheckOk: true,
@@ -186,6 +248,26 @@ export function initHlsServer() {
             decodedAbrUrl: decodedAbrUrl,
             redirectHlsUrl: redirectHlsUrl,
         }
+        setTimeout(() => {
+            const videoInfo = new YT.VideoInfo([ ret ], innertube.actions, clientPlaybackNonce);
+            let historyInfo = {
+                startTime: startTime,
+                clientPlaybackNonce: clientPlaybackNonce,
+                videoInfo: videoInfo,
+                lastReportTime: 0,
+                playerTime: 0,
+                innertube: innertube,
+            };
+            videoHistory[videoId] = historyInfo;
+            const playbackTracking = videoInfo.page[0].playback_tracking;
+            if (playbackTracking) {
+                reportPlaybackStats(playbackTracking.videostats_playback_url, innertube, startTime, clientPlaybackNonce).then(() => {
+                    const currentTime = Math.floor(Date.now() / 1000) - startTime;
+                    historyInfo.lastReportTime = currentTime;
+                    reportWatchTimeStats(innertube, startTime, clientPlaybackNonce, currentTime, playbackTracking!.videostats_watchtime_url);
+                });
+            }
+        }, 50);
         return response;
     }
 
@@ -365,6 +447,21 @@ export function initHlsServer() {
                 'user-agent': navigator?.userAgent,
             }
             let method = 'POST';
+            setTimeout(() => {
+                let historyInfo = videoHistory[videoId];
+                let videoInfo = historyInfo?.videoInfo;
+                if (historyInfo && videoInfo && playerTimeMs) {
+                    let currPlayerTime = Number(playerTimeMs) / 1000
+                    historyInfo.playerTime = currPlayerTime;
+                    const playbackTracking = videoInfo.page[0].playback_tracking;
+                    let actualTime = currPlayerTime - 50;
+                    if (playbackTracking && actualTime - historyInfo.lastReportTime > 30) {
+                        historyInfo.lastReportTime = actualTime;
+                        reportWatchTimeStats(innertube, historyInfo.startTime, historyInfo.clientPlaybackNonce, 
+                            historyInfo.lastReportTime, playbackTracking!.videostats_watchtime_url);
+                    }
+                }
+            }, 100);
             return {
                 requestUrl,
                 method,

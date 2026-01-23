@@ -573,7 +573,7 @@ export function useYoutubePlayer() {
           if (mWindow?.appPlayer && mWindow?.appPlayer?.skipHls != true) {
             mWindow!.appPlayer!.skipHls = true;
             if (currentVideoId) {
-              loadVideo(currentVideoId);
+              // loadVideo(currentVideoId);
             }
           }
         },
@@ -1215,7 +1215,7 @@ export function useYoutubePlayer() {
       if (mWindow?.appPlayer && mWindow?.appPlayer?.skipHls != true) {
         mWindow!.appPlayer!.skipHls = true;
         if (currentVideoId) {
-          loadVideo(currentVideoId);
+          // loadVideo(currentVideoId);
         }
       }
       addToast(`Error loading video: ${(error as any).message}`, 'error');

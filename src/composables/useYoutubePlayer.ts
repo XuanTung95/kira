@@ -1020,6 +1020,7 @@ export function useYoutubePlayer() {
           }
         }
       }
+      console.log('hls', hls);
       if (hls != null) {
         try {
           if (playbackTracking && ENABLE_PLAYBACK_TRACKING) {
@@ -1210,6 +1211,13 @@ export function useYoutubePlayer() {
     } catch (error) {
       console.error(error);
       playerState.value = 'error';
+      let mWindow = window as any;
+      if (mWindow?.appPlayer && mWindow?.appPlayer?.skipHls != true) {
+        mWindow!.appPlayer!.skipHls = true;
+        if (currentVideoId) {
+          loadVideo(currentVideoId);
+        }
+      }
       addToast(`Error loading video: ${(error as any).message}`, 'error');
     }
   }

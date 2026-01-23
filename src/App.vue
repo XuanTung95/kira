@@ -438,6 +438,7 @@ async function initInnertube() {
       visitor_data: visitorData,
       lang: mWindow?.appClientInfo?.languageCode,
       location: mWindow?.appClientInfo?.countryCode,
+      enable_session_cache: false,
       fetch: fetchFunction
     });
 

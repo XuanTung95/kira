@@ -564,11 +564,18 @@ export function useYoutubePlayer() {
           console.error('Streaming failure:', error);
           playerState.value = 'error';
           addToast(`Streaming error`);
-          player.retryStreaming(5);
+          // player.retryStreaming(5);
           onPlayerStateChanged({
             status: 'error',
             msg: `Streaming error ${error}`
           });
+          let mWindow = window as any;
+          if (mWindow?.appPlayer && mWindow?.appPlayer?.skipHls != true) {
+            mWindow!.appPlayer!.skipHls = true;
+            if (currentVideoId) {
+              loadVideo(currentVideoId);
+            }
+          }
         },
         preferNativeHls: true,
         useNativeHlsOnSafari: true,
@@ -1002,7 +1009,7 @@ export function useYoutubePlayer() {
     if (supportDash == false || true) {
       /// Không hỗ trợ MediaSource -> play mp4 360p
       let hls = videoInfo?.streaming_data?.hls_manifest_url;
-      if (hls == null) {
+      if (hls == null || (window as any)?.appPlayer?.skipHls == true) {
         let formats = apiResponse.data.streamingData?.formats;
         if (formats != null && Array.isArray(formats) && formats.length > 0) {
           let format = formats[0];

@@ -2,7 +2,7 @@ import { VideoPlaybackAbrRequest, FormatId, StreamerContext, PlaybackCookie } fr
 import { useInnertube } from './useInnertube';
 import { useOnesieConfig } from './useOnesieConfig';
 import { botguardService } from '@/services/botguard';
-import { base64ToU8, u8ToBase64 } from '../../../googlevideo/dist/src/utils/shared';
+import { base64ToU8, u8ToBase64 } from 'googlevideo/utils';
 import { Utils, Constants, Innertube, YT } from 'youtubei.js/web';
 import { onInitCodeDone, getClientData } from './app_player_interface'
 import { sendMessageToApp } from './src/extractor_helper'

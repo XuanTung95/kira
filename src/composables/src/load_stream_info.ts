@@ -21,24 +21,36 @@ export class LoadStreamInfo {
             return null;
         }
         const getInnertube = (window as any)?.getInnertube;
-        const innertube = getInnertube == null ? null : await getInnertube();
+        const innertube = getInnertube == null ? (window as any)?.innertube : await getInnertube();
         let info = this.clientInfo;
+        let client = innertube?.session?.context?.client;
         /// App: 9Tube
-        let userArgent = "com.google.ios.youtube/20.24.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)";
+        // let userArgent = "com.google.ios.youtube/20.24.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)";
+        let userArgent = client?.userAgent ?? "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1,gzip(gfe)";
         let body: any = {
             context: {
                 client: {
                     hl : info?.languageCode,
                     gl : info?.countryCode,
-                    clientVersion: "20.24.4",
-                    osName: "iOS",
-                    visitorData: "",
-                    userAgent: userArgent,
-                    clientName: "iOS",
-                    platform: "MOBILE",
-                    deviceMake: "Apple",
-                    deviceModel: "iPhone16,2",
-                    osVersion: "18.3.2.22D82"
+                    // clientVersion: "20.24.4",
+                    // osName: "iOS",
+                    // visitorData: "",
+                    // userAgent: userArgent,
+                    // clientName: "iOS",
+                    // platform: "MOBILE",
+                    // deviceMake: "Apple",
+                    // deviceModel: "iPhone16,2",
+                    // osVersion: "18.3.2.22D82"
+                    "osName": client?.osName,
+                    "osVersion": client?.osVersion,
+                    "userAgent": userArgent,
+                    "deviceMake": client?.deviceMake,
+                    "deviceModel": client?.deviceModel,
+                    "clientName": client?.clientName,
+                    "clientVersion": client?.clientVersion,
+                    "browserName": client?.browserName,
+                    "browserVersion": client?.browserVersion,
+                    "platform": client?.platform,
                 },
                 user: {
                     lockedSafetyMode: false,
@@ -71,6 +83,16 @@ export class LoadStreamInfo {
             if (videoDetails?.isLiveContent == true) {
                 streamType = 'LIVE_STREAM'
             }
+            let formats = streamingData?.formats;
+            let mp4Url = null;
+            if (formats != null && Array.isArray(formats) && formats.length > 0) {
+                let format = formats[0];
+                let url = format.url;
+                let sc = format.signatureCipher;
+                if (url || sc) {
+                    mp4Url = await innertube.session.player!.decipher(url, sc);
+                }
+            }
             let streamInfo: any = {
                 id: this.videoId,
                 streamType: streamType,
@@ -82,7 +104,8 @@ export class LoadStreamInfo {
                 subChannelName: '',
                 subChannelUrl: '',
                 dashMpdUrl: '',
-                hlsUrl: streamingData?.hlsManifestUrl ?? '',
+                videoStreams: mp4Url != null ? [{content: mp4Url}] : null,
+                hlsUrl: videoDetails?.isLiveContent == true ? (streamingData?.hlsManifestUrl ?? '') : '',
                 errorReason: playabilityStatus?.reason,
                 isLoginRequired: playabilityStatus?.status == 'LOGIN_REQUIRED' ? true : null,
                 nextToken: '',
@@ -98,9 +121,7 @@ export class LoadStreamInfo {
                     maxDuration: 0,
                     pageDuration: 0,
                 },
-            }
-            await new Promise<void>(resolve => setTimeout(resolve, 1000));
-            (window as any).hls = streamingData?.hlsManifestUrl
+            };
             return ret;
         }
         return null;

@@ -456,6 +456,7 @@ async function initInnertube() {
     }
 
     innertubeInstance.value = instance;
+    mWindow.innertube = instance;
     return instance;
   } catch (error) {
     addToast('Failed to initialize API');

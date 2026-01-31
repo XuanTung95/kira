@@ -501,7 +501,8 @@ export function initHlsServer() {
     }
 
     mWindow.hlsServer = {
-        handleCmd: handleAppCommand
+        handleCmd: handleAppCommand,
+        onMintPoTokenCallback: onMintPoTokenCallback,
     };
 
     onInitCodeDone();

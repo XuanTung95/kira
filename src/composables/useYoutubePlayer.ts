@@ -17,8 +17,9 @@ import { useInnertube } from './useInnertube';
 import { useOnesieConfig } from './useOnesieConfig';
 import { useToastStore } from '@/stores/toastStore';
 import { useProxySettings } from '@/composables/useProxySettings';
-import { checkExtension } from '@/utils/helpers';
+import { checkExtension, fetchFunction } from '@/utils/helpers';
 import {preloadVideo, getPreloadVideo} from '@/composables/app_preload_video';
+import { macSafariClient, playerEndpoint } from './app_clients';
 
 const VOLUME_KEY = 'youtube_player_volume';
 const PLAYBACK_POSITION_KEY = 'youtube_playback_positions';
@@ -860,7 +861,55 @@ export function useYoutubePlayer() {
     if (reloadPlaybackContext) {
       requestParams.playbackContext.reloadPlaybackContext = reloadPlaybackContext;
     }
-    let ret = await innertube.actions.execute('/player', { ...requestParams, parse: false });
+    // let ret = await innertube.actions.execute('/player', { ...requestParams, parse: false });
+    ///
+    let mClient = macSafariClient;
+    let mSession = innertube.session;
+    let cInfo = (window as any)?.appClientInfo;
+    let hl = cInfo?.languageCode;
+    let gl = cInfo?.countryCode;
+    requestParams.context = {
+      client: {
+        hl: hl,
+        gl: gl,
+        deviceMake: mClient.deviceMake,
+        deviceModel: mClient.deviceModel,
+        userAgent: mClient.userAgent,
+        clientName: mClient.clientName,
+        clientVersion: mSession.client_version,
+        osName: mClient.osName,
+        osVersion: mClient.osVersion,
+        platform: mClient.platform,
+        browserName: mClient.browserName,
+        browserVersion: mClient.browserVersion,
+      },
+      user: {
+          lockedSafetyMode: false
+      },
+      request: {
+          useSsl: true,
+      },
+    };
+    let response = await fetchFunction(playerEndpoint, {
+      method: 'POST',
+      body: JSON.stringify(requestParams),
+      headers: {
+        'Accept': '*/*',
+        'Accept-Language': '*',
+        'Content-Type': 'application/json',
+        'X-Youtube-Client-Version': mSession.client_version,
+        'X-Youtube-Client-Name': '1',
+        'X-Goog-Visitor-Id': mSession.context.client.visitorData ?? '',
+        'Referer': `https://www.youtube.com/watch?v=${videoId}`,
+        'User-Agent': mClient.userAgent,
+      }
+    });
+    let ret: ApiResponse = {
+      success: response.ok,
+      status_code: response.status,
+      data: await response.json()
+    }
+    ///
     let adaptiveFormats = ret?.data?.streamingData?.adaptiveFormats;
     if (adaptiveFormats) {
       /// bỏ audio có isVb == true;

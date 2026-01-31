@@ -194,6 +194,7 @@ export function initHlsServer() {
         await getClientData();
         const clientPlaybackNonce = Utils.generateRandomString(12);
         const startTime = Math.floor(Date.now() / 1000);
+        let poToken = await onMintPoTokenCallback(videoId);
         const requestParams: Record<string, any> = {
             videoId,
             contentCheckOk: true,
@@ -205,7 +206,10 @@ export function initHlsServer() {
                 contentPlaybackContext: {
                 signatureTimestamp: innertube.session.player?.signature_timestamp
                 }
-            }
+            },
+            serviceIntegrityDimensions: poToken ? {
+                poToken: poToken,
+            } : null,
         };
         let cInfo = (window as any)?.appClientInfo;
         let hl = cInfo?.languageCode;

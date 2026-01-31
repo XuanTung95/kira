@@ -53,6 +53,6 @@ export function initExtractor() {
         checkSupport: checkSupport,
         supportNames: getSupportNames,
         extract: extract,
-        version: 32
+        version: 35
     }
 }

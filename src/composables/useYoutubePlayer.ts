@@ -57,9 +57,13 @@ const playerComponents = shallowRef<PlayerComponents>({
   customSpinner: null
 });
 
+interface PoTokenData {
+  coldStartToken: string | null;
+  playbackWebPoToken: string | null;
+}
+let poTokenMap : Record<string, PoTokenData> = {};
 const playerState = ref<PlayerState>('loading');
 
-let playbackWebPoToken: string | undefined;
 let coldStartToken: string | undefined;
 
 let startSilencePlayerInternal: () => Promise<void> | null;
@@ -334,25 +338,36 @@ export function useYoutubePlayer() {
   //#endregion
 
   //#region --- WebPO Minter ---
-  async function mintContentWebPO() {
-    if (!playbackWebPoTokenContentBinding || playbackWebPoTokenCreationLock) return;
+  async function mintContentWebPO(videoId?: string | null) {
+    let tokenContentBinding = videoId ?? playbackWebPoTokenContentBinding;
+    if (!tokenContentBinding || playbackWebPoTokenCreationLock) return;
 
     playbackWebPoTokenCreationLock = true;
+    if (poTokenMap[tokenContentBinding ?? ''] == null) {
+        poTokenMap[tokenContentBinding ?? ''] = {
+            coldStartToken: null,
+            playbackWebPoToken: null,
+        };
+    }
+    let token = poTokenMap[tokenContentBinding ?? ''];
     try {
-      coldStartToken = botguardService.mintColdStartToken(playbackWebPoTokenContentBinding);
-      console.info('[Player]', `Cold start token created (Content binding: ${decodeURIComponent(playbackWebPoTokenContentBinding)})`);
+      coldStartToken = botguardService.mintColdStartToken(tokenContentBinding);
+      token.coldStartToken = coldStartToken;
+      console.info('[Player]', `Cold start token created (Content binding: ${decodeURIComponent(tokenContentBinding)})`);
 
       if (!botguardService.isInitialized()) await botguardService.reinit();
 
       if (botguardService.integrityTokenBasedMinter) {
-        playbackWebPoToken = await botguardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(playbackWebPoTokenContentBinding));
-        console.info('[Player]', `WebPO token created (Content binding: ${decodeURIComponent(playbackWebPoTokenContentBinding)})`);
+        let playbackWebPoToken = await botguardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(tokenContentBinding));
+        token.playbackWebPoToken = playbackWebPoToken;
+        console.info('[Player]', `WebPO token created (Content binding: ${decodeURIComponent(tokenContentBinding)})`);
       }
     } catch (err) {
       console.error('[Player]', 'Error minting WebPO token', err);
     } finally {
       playbackWebPoTokenCreationLock = false;
     }
+    return token?.playbackWebPoToken ?? token?.coldStartToken;
   }
   //#endregion
 
@@ -733,15 +748,14 @@ export function useYoutubePlayer() {
     });
 
     sabrAdapter.onMintPoToken(async () => {
+      let token = poTokenMap[playbackWebPoTokenContentBinding ?? ''];
+      let playbackWebPoToken = token?.playbackWebPoToken;
       if (!playbackWebPoToken) {
         // For live streams, we must block and wait for the PO token as it's sometimes required for playback to start.
         // For VODs, we can mint the token in the background to avoid delaying playback, as it's not immediately required.
         // While BotGuard is pretty darn fast, it still makes a difference in user experience (from my own testing).
-        if (isLive) {
-          await mintContentWebPO();
-        } else {
-          mintContentWebPO().then();
-        }
+        await mintContentWebPO();
+        playbackWebPoToken = poTokenMap[playbackWebPoTokenContentBinding ?? '']?.playbackWebPoToken;
       }
 
       return playbackWebPoToken || coldStartToken || '';
@@ -820,7 +834,7 @@ export function useYoutubePlayer() {
   async function fetchVideoInfo(videoId: string, reloadPlaybackContext?: ReloadPlaybackContext): Promise<ApiResponse> {
     const innertube = await getInnertube();
     const clientConfig = await getClientConfig();
-
+    let poToken = await mintContentWebPO(videoId);
     const requestParams: Record<string, any> = {
       videoId,
       contentCheckOk: true,
@@ -832,7 +846,10 @@ export function useYoutubePlayer() {
         contentPlaybackContext: {
           signatureTimestamp: innertube.session.player?.signature_timestamp
         }
-      }
+      },
+      serviceIntegrityDimensions: poToken ? {
+        poToken: poToken,
+      } : null,
     };
 
     // const savedPosition = getPlaybackPosition(currentVideoId);
@@ -1130,7 +1147,6 @@ export function useYoutubePlayer() {
 
     currentVideoId = videoId;
     playerState.value = 'loading';
-    playbackWebPoToken = undefined;
     textTrackVisibility = false;
 
     try {

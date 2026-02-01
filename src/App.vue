@@ -383,6 +383,7 @@ import {
   isFirstTime,
   loadCachedClientConfig, ProxySettings
 } from './utils/helpers';
+import { macSafariClient } from './composables/app_clients';
 
 const router = useRouter();
 const { addToast } = useToastStore();
@@ -432,9 +433,14 @@ async function initInnertube() {
     console.info('[App]', `Initializing InnerTube API [firstTime=${firstTime}]`);
     let mWindow = window as any;
     let visitorData = mWindow?.appClientInfo?.visitorData;
+    let client = macSafariClient;
     const instance = await Innertube.create({
       // cache: new UniversalCache(true),
-      client_type: ClientType.MWEB,
+      client_type: ClientType.WEB,
+      user_agent: client.userAgent,
+      retrieve_player: true,
+      device_category: 'mobile',
+      generate_session_locally: false,
       visitor_data: visitorData,
       lang: mWindow?.appClientInfo?.languageCode,
       location: mWindow?.appClientInfo?.countryCode,

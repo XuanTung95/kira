@@ -148,7 +148,7 @@ export function useYoutubePlayer() {
   let isLive = false;
 
   const startTime = Math.floor(Date.now() / 1000);
-  const clientPlaybackNonce = Utils.generateRandomString(12);
+  const clientPlaybackNonce = Utils.generateRandomString(16);
   const sessionId = Array.from(Array(16), () => Math.floor(Math.random() * 36).toString(36)).join('');
 
   // initSilencePlayer();

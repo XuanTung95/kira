@@ -292,6 +292,7 @@ export function getInjectedProxyFunction() {
 export async function fetchFunction(input: string | Request | URL, init?: RequestInit, ignoreInjectedProxy = false): Promise<Response> {
   const url = input instanceof URL ? input : new URL(typeof input === 'string' ? input : input.url);
   const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+  headers.set('Accept-Encoding', 'gzip, deflate');
   const requestInit = { ...init, headers };
 
   if (url.pathname.includes('v1/player')) {

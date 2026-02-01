@@ -2,6 +2,7 @@ import {fetchFunction } from '@/utils/helpers';
 import {setProxyForDesktop} from '@/composables/useProxySettings';
 import { router } from '../router'
 import { ClientInfo } from './src/extractor_data';
+import { macSafariClient } from './app_clients';
 
 let _requestId: number = 0;
 
@@ -138,8 +139,10 @@ async function proxyFetch(input: string | Request | URL, init?: RequestInit): Pr
     }
 
     if (headers['user-agent'] == null) {
-        headers['user-agent'] = navigator.userAgent;
+        let client = macSafariClient;
+        headers['user-agent'] = client.userAgent;
     }
+    headers['Accept-Encoding'] = 'gzip, deflate';
 
     let cmd = 'proxy';
     const req = { id: requestId, cmd, url, method, headers, body: bodyBase64 == null ? body : null, bodyBase64 };

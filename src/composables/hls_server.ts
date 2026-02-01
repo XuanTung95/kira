@@ -192,7 +192,7 @@ export function initHlsServer() {
     async function getPlayerResponseInternal(videoId: string) {
         const innertube = await getInnertube();
         await getClientData();
-        const clientPlaybackNonce = Utils.generateRandomString(12);
+        const clientPlaybackNonce = Utils.generateRandomString(16);
         const startTime = Math.floor(Date.now() / 1000);
         let poToken = await onMintPoTokenCallback(videoId);
         const requestParams: Record<string, any> = {

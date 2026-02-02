@@ -729,6 +729,18 @@ export async function getGlobalInfoShort() {
     );
 }
 
+export async function getPoToken(videoId: string) {
+    if (!window || (window as any).flutter_inappwebview == null) {
+        return null;
+    }
+    return callSendToApp(
+        {
+            cmd: 'getPoToken',
+            videoId: videoId,
+        },
+    );
+}
+
 export async function getClientData() {
     if (!window || (window as any).flutter_inappwebview == null) {
         return null;

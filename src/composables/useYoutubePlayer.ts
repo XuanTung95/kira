@@ -20,6 +20,7 @@ import { useProxySettings } from '@/composables/useProxySettings';
 import { checkExtension, fetchFunction } from '@/utils/helpers';
 import {preloadVideo, getPreloadVideo} from '@/composables/app_preload_video';
 import { macSafariClient, playerEndpoint } from './app_clients';
+import { getPoToken } from './app_player_interface';
 
 const VOLUME_KEY = 'youtube_player_volume';
 const PLAYBACK_POSITION_KEY = 'youtube_playback_positions';
@@ -352,6 +353,11 @@ export function useYoutubePlayer() {
     }
     let token = poTokenMap[tokenContentBinding ?? ''];
     try {
+      let response = await getPoToken(tokenContentBinding);
+      if (response?.poToken) {
+        token.playbackWebPoToken = response?.poToken;
+      }
+      /*
       coldStartToken = botguardService.mintColdStartToken(tokenContentBinding);
       token.coldStartToken = coldStartToken;
       console.info('[Player]', `Cold start token created (Content binding: ${decodeURIComponent(tokenContentBinding)})`);
@@ -363,6 +369,7 @@ export function useYoutubePlayer() {
         token.playbackWebPoToken = playbackWebPoToken;
         console.info('[Player]', `WebPO token created (Content binding: ${decodeURIComponent(tokenContentBinding)})`);
       }
+      */
     } catch (err) {
       console.error('[Player]', 'Error minting WebPO token', err);
     } finally {

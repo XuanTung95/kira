@@ -1102,6 +1102,7 @@ export function useYoutubePlayer() {
         } catch (err) {
           console.error('[Player]', 'Error reporting playback stats', err);
         }
+        await new Promise(resolve => setTimeout(resolve, 4000));
         await player.load(hls);
         videoElement.play().catch((err) => {
           if (err instanceof DOMException && err.name === 'NotAllowedError') {

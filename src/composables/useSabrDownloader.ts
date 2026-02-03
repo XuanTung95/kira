@@ -44,9 +44,6 @@ export function useSabrDownloader() {
       contentCheckOk: true,
       racyCheckOk: true,
       playbackContext: {
-        adPlaybackContext: {
-          pyv: true
-        },
         contentPlaybackContext: {
           signatureTimestamp: innertube.session.player?.signature_timestamp
         }

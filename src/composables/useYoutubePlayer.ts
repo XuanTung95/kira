@@ -1076,7 +1076,7 @@ export function useYoutubePlayer() {
     isLive = !!videoInfo.basic_info.is_live;
     drmParams = (apiResponse.data.streamingData as any)?.drmParams;
     let supportDash = await isSupportDash();
-    if (supportDash == false || true) {
+    if (supportDash == false) {
       /// Không hỗ trợ MediaSource -> play mp4 360p
       let hls = videoInfo?.streaming_data?.hls_manifest_url;
       if (hls == null || (window as any)?.appPlayer?.skipHls == true) {

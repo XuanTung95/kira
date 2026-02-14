@@ -146,6 +146,7 @@ export function useYoutubePlayer() {
   let playbackTrackerInterval: number | null = null;
   let playerStartTimeWatcher: WatchHandle | null = null;
   let currentVideoId = '';
+  let cannotGetPoToken = false;
   let isLive = false;
 
   const startTime = Math.floor(Date.now() / 1000);
@@ -354,8 +355,15 @@ export function useYoutubePlayer() {
     let token = poTokenMap[tokenContentBinding ?? ''];
     try {
       let response = await getPoToken(tokenContentBinding);
+      let testMode = (window as any).testMode == true;
       if (response?.poToken) {
+        cannotGetPoToken = false;
         token.playbackWebPoToken = response?.poToken;
+      } else {
+        cannotGetPoToken = true;
+      }
+      if (testMode) {
+        console.log('getPoToken ' + response?.poToken);
       }
       /*
       coldStartToken = botguardService.mintColdStartToken(tokenContentBinding);
@@ -1072,11 +1080,12 @@ export function useYoutubePlayer() {
     const playbackStartConfig = (apiResponse.data?.playerConfig as any)?.playbackStartConfig as {
       startSeconds?: number
     } | undefined;
+    let testMode = (window as any).testMode == true;
 
     isLive = !!videoInfo.basic_info.is_live;
     drmParams = (apiResponse.data.streamingData as any)?.drmParams;
     let supportDash = await isSupportDash();
-    if (supportDash == false) {
+    if (supportDash == false || cannotGetPoToken) {
       /// Không hỗ trợ MediaSource -> play mp4 360p
       let hls = videoInfo?.streaming_data?.hls_manifest_url;
       if (hls == null || (window as any)?.appPlayer?.skipHls == true) {
@@ -1103,6 +1112,9 @@ export function useYoutubePlayer() {
           console.error('[Player]', 'Error reporting playback stats', err);
         }
         await new Promise(resolve => setTimeout(resolve, 4000));
+        if (testMode) {
+          console.warn('Play single url ' + hls);
+        }
         await player.load(hls);
         videoElement.play().catch((err) => {
           if (err instanceof DOMException && err.name === 'NotAllowedError') {
@@ -1174,7 +1186,9 @@ export function useYoutubePlayer() {
     } catch (err) {
       console.error('[Player]', 'Error reporting playback stats', err);
     }
-
+    if (testMode) {
+      console.warn('Play dash manifest uri');
+    }
     await player.load(manifestUri, isLive ? undefined : startTime);
 
     videoElement.play().catch((err) => {

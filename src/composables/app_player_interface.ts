@@ -3,6 +3,7 @@ import {setProxyForDesktop} from '@/composables/useProxySettings';
 import { router } from '../router'
 import { ClientInfo } from './src/extractor_data';
 import { macSafariClient } from './app_clients';
+import { Log } from 'youtubei.js/web';
 
 let _requestId: number = 0;
 
@@ -296,6 +297,10 @@ async function initEnv() {
     console.log('sendToApp res', JSON.stringify(res))
     if (res.useWebMessage == true) {
         /// use webmessage
+    }
+    if (res.testMode == true) {
+        (window as any).testMode = true;
+        Log.setLevel(1,2,3,4);
     }
     if (res.info != null) {
         (window as any).appClientInfo = new ClientInfo(res.info);

@@ -445,6 +445,7 @@ async function initInnertube() {
       lang: mWindow?.appClientInfo?.languageCode,
       location: mWindow?.appClientInfo?.countryCode,
       enable_session_cache: false,
+      player_id: "9f4cc5e4",
       fetch: fetchFunction
     });
 

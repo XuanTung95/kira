@@ -1111,7 +1111,7 @@ export function useYoutubePlayer() {
         } catch (err) {
           console.error('[Player]', 'Error reporting playback stats', err);
         }
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        await new Promise(resolve => setTimeout(resolve, 4500));
         if (testMode) {
           console.warn('Play single url ' + hls);
         }

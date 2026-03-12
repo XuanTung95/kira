@@ -614,9 +614,11 @@ export function useYoutubePlayer() {
         rebufferingGoal: 0.01,
         bufferBehind: 300,
         retryParameters: {
-          maxAttempts: 8,
+          maxAttempts: 5,
           fuzzFactor: 0.5,
-          timeout: 30 * 1000
+          baseDelay: 1000,
+          backoffFactor: 2,
+          timeout: 10 * 1000
         }
       },
       // textDisplayFactory: () => new shaka.text.UITextDisplayer(videoEl, shakaContainer),
@@ -1069,6 +1071,28 @@ export function useYoutubePlayer() {
     }
   }
 
+  async function waitPlayOrError(
+    player: shaka.Player,
+    video: HTMLVideoElement
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const onError = (e: Event) => {
+        cleanup();
+        reject(e);
+      };
+      const onPlaying = () => {
+        cleanup();
+        resolve();
+      };
+      const cleanup = () => {
+        player.removeEventListener("error", onError as EventListener);
+        video.removeEventListener("playing", onPlaying);
+      };
+      player.addEventListener("error", onError as EventListener);
+      video.addEventListener("playing", onPlaying);
+    });
+  }
+
   async function loadManifest(apiResponse: ApiResponse) {
     const { player, sabrAdapter, videoElement } = playerComponents.value;
     const innertube = await getInnertube();
@@ -1111,17 +1135,37 @@ export function useYoutubePlayer() {
         } catch (err) {
           console.error('[Player]', 'Error reporting playback stats', err);
         }
-        await new Promise(resolve => setTimeout(resolve, 4500));
-        if (testMode) {
-          console.warn('Play single url ' + hls);
-        }
-        await player.load(hls);
-        videoElement.play().catch((err) => {
-          if (err instanceof DOMException && err.name === 'NotAllowedError') {
-            console.warn('[Player]', 'Autoplay was prevented by the browser.', err);
-            addToast('Autoplay was prevented by the browser.', 'info');
+        let startTs = Date.now();
+        let waitDone = false;
+        let initWaitTime = new Promise(resolve => setTimeout(resolve, 3000));
+        do {
+          try {
+            if (testMode) {
+              console.warn('[Player] load url ' + hls);
+            }
+            await player.load(hls);
+            console.warn('[Player] load OK url ' + hls);
+            videoElement.play();
+            await waitPlayOrError(player, videoElement);
+            console.warn('[Player] play OK url ' + hls);
+            waitDone = true;
+          } catch (err) {
+            if (err instanceof DOMException && err.name === 'NotAllowedError') {
+              console.warn('[Player]', 'Autoplay was prevented by the browser.', err);
+              addToast('Autoplay was prevented by the browser.', 'info');
+              waitDone = true;
+            }
+            console.warn('[Player] load error', err);
+            let ts = Date.now();
+            if (ts - startTs > 5000) {
+              waitDone = true;
+            } else {
+              console.error('[Player] waiting after error');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              await initWaitTime;
+            }
           }
-        });
+        } while (!waitDone)
         return;
       }
     }

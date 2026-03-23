@@ -323,7 +323,7 @@ async function fetchVideoInfo() {
       channelName: videoSecondaryInfo?.owner?.author.name || '',
       channelAvatar: videoSecondaryInfo?.owner?.author.best_thumbnail?.url || '',
       subscribers: videoSecondaryInfo?.owner?.subscriber_count.toString() || '0 subscribers',
-      views: videoPrimaryInfo?.view_count?.short_view_count.isEmpty() ? videoPrimaryInfo.view_count.view_count.toString() : videoPrimaryInfo?.view_count?.short_view_count.toString(),
+      views: videoPrimaryInfo?.view_count?.short_view_count?.isEmpty() ? videoPrimaryInfo.view_count.view_count?.toString() : videoPrimaryInfo?.view_count?.short_view_count?.toString(),
       publishDate: videoPrimaryInfo?.relative_date.isEmpty() ? undefined : videoPrimaryInfo?.relative_date.toString(),
       description: videoSecondaryInfo?.description
     };

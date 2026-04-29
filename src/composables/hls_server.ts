@@ -41,7 +41,7 @@ function _onlyKeetItag(adaptiveFormats: any, itag: any) {
     return adaptiveFormats;
 }
 
-function _getBandwidthEstimate(adaptiveFormats: any) : string {
+function _getBandwidthEstimate(adaptiveFormats: any) : number {
     let maxBitrate = 0;
     if (Array.isArray(adaptiveFormats)) {
         for (const item of adaptiveFormats) {
@@ -54,7 +54,7 @@ function _getBandwidthEstimate(adaptiveFormats: any) : string {
     if (maxBitrate < 5653951) {
         maxBitrate = 5653951;
     }
-    return maxBitrate.toString();
+    return maxBitrate;
 }
 
 function _getAudioFormats(adaptiveFormats: any) : FormatId[] {
@@ -372,14 +372,14 @@ export function initHlsServer() {
                     clientViewportIsFlexible: false,
                     stickyResolution: resolution ?? 720,
                     visibility: 0,
-                    playerState: '0',
+                    playerState: 0,
                     preferVp9: false,
                     sabrSupportQualityConstraints: false,
-                    playerTimeMs: '0',
+                    playerTimeMs: 0,
                 },
                 bufferedRanges: [],
                 selectedFormatIds: [],
-                playerTimeMs: "0",
+                playerTimeMs: 0,
                 preferredAudioFormatIds: preferredAudioFormatIds,
                 preferredVideoFormatIds: preferredVideoFormatIds,
                 preferredSubtitleFormatIds: [],
@@ -412,7 +412,7 @@ export function initHlsServer() {
                     endSegmentIndex: videoBuffer.endSegmentIndex ?? 1,
                     formatId: selectedVideoFormat,
                     startSegmentIndex: videoBuffer.startSegmentIndex ?? 1,
-                    startTimeMs: '0',
+                    startTimeMs: 0,
                 });
             }
 
@@ -422,7 +422,7 @@ export function initHlsServer() {
                     endSegmentIndex: audioBuffer.endSegmentIndex ?? 1,
                     formatId: selectedAudioFormat,
                     startSegmentIndex: audioBuffer.startSegmentIndex ?? 1,
-                    startTimeMs: '0',
+                    startTimeMs: 0,
                 });
             }
 

@@ -474,7 +474,7 @@ export function useAppPlayerInterface() {
                                 mWindow.playerSetting.defaultHeight = height;
                             }
                             if (language != null) {
-                                mWindow.playerSetting.language = height;
+                                mWindow.playerSetting.language = language;
                             }
                         }
                         router.replace(`/player/${videoId}`);

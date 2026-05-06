@@ -301,6 +301,14 @@ async function initEnv() {
     if (res.testMode == true) {
         (window as any).testMode = true;
         Log.setLevel(1,2,3,4);
+    } else {
+        /// disable all log
+        let emptyLog = function() {};
+        console.log = emptyLog;
+        console.debug = emptyLog;
+        console.info = emptyLog;
+        console.warn = emptyLog;
+        console.error = emptyLog;
     }
     if (res.info != null) {
         (window as any).appClientInfo = new ClientInfo(res.info);
